@@ -1,0 +1,12 @@
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/bin/Debug/net8.0/Focus.Domain.deps.json
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/bin/Debug/net8.0/Focus.Domain.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/bin/Debug/net8.0/Focus.Domain.pdb
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.AssemblyInfoInputs.cache
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.AssemblyInfo.cs
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.csproj.CoreCompileInputs.cache
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.sourcelink.json
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/refint/Focus.Domain.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/Focus.Domain.pdb
+/home/brenndacaethano/dev/FocusProject/src/Focus.Domain/obj/Debug/net8.0/ref/Focus.Domain.dll

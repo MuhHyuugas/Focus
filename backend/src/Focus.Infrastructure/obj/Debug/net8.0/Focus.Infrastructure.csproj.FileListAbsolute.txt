@@ -1,0 +1,16 @@
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/bin/Debug/net8.0/Focus.Infrastructure.deps.json
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/bin/Debug/net8.0/Focus.Infrastructure.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/bin/Debug/net8.0/Focus.Infrastructure.pdb
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/bin/Debug/net8.0/Focus.Domain.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/bin/Debug/net8.0/Focus.Domain.pdb
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.csproj.AssemblyReference.cache
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.AssemblyInfoInputs.cache
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.AssemblyInfo.cs
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.csproj.CoreCompileInputs.cache
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.sourcelink.json
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.csproj.CopyComplete
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/refint/Focus.Infrastructure.dll
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/Focus.Infrastructure.pdb
+/home/brenndacaethano/dev/FocusProject/src/Focus.Infrastructure/obj/Debug/net8.0/ref/Focus.Infrastructure.dll

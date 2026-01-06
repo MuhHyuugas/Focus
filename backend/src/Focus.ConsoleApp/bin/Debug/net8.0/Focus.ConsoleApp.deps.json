@@ -1,0 +1,63 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Focus.ConsoleApp/1.0.0": {
+        "dependencies": {
+          "Focus.Application": "1.0.0",
+          "Focus.Infrastructure": "1.0.0"
+        },
+        "runtime": {
+          "Focus.ConsoleApp.dll": {}
+        }
+      },
+      "Focus.Application/1.0.0": {
+        "dependencies": {
+          "Focus.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Focus.Application.dll": {}
+        }
+      },
+      "Focus.Domain/1.0.0": {
+        "runtime": {
+          "Focus.Domain.dll": {}
+        }
+      },
+      "Focus.Infrastructure/1.0.0": {
+        "dependencies": {
+          "Focus.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Focus.Infrastructure.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Focus.ConsoleApp/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Focus.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Focus.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Focus.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
