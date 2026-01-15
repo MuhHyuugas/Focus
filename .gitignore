@@ -1,0 +1,21 @@
+# Basics
+##
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# .NET
+##
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Other
+##
+.DS_Store
+Thumbs.db

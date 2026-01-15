@@ -27,5 +27,15 @@ namespace Focus.Application.UseCases.Usuarios
             _repository.Adicionar(usuario);
 
         }
+
+        public void Executar(string email)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Executar(DateTime dataNascimento)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
