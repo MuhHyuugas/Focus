@@ -11,19 +11,19 @@ namespace Focus.Application.UseCases.Usuarios
 
         public void Executar(string nome, string email, string senha, DateTime dataNascimento)
         {
-            
-            var usuario = _repository.ObterPorEmail(email);
-            
-           
-            if (usuario != null)
+
+            var emailJaExiste = _repository.ExisteEmail(email);
+
+
+            if (emailJaExiste)
             {
                 throw new Exception("Usuário já existe");
             }
 
-        
-           usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email, senha, dataNascimento);
-            
-          
+
+            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email, senha, dataNascimento);
+
+
             _repository.Adicionar(usuario);
 
         }

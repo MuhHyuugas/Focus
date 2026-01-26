@@ -1,12 +1,17 @@
 using Focus.Application.UseCases.Usuarios;
 using Focus.Domain.Repositories;
 using Focus.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(); 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<Focus.Infrastructure.Data.AppDbContext>(options =>
+    options.UseSqlite("Data Source=app.db"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -23,5 +28,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapControllers(); 
+app.MapControllers();
 app.Run();

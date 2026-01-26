@@ -1,35 +1,28 @@
-using System.Collections.Generic;
 using Focus.Domain.Entities;
 using Focus.Domain.Repositories;
+using Focus.Infrastructure.Data;
+using System.Linq;
 
 namespace Focus.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        
-        private static readonly List<UsuarioTDAH> _bancoDeDadosFake = new();
+        private readonly AppDbContext _context;
 
+        public UserRepository(AppDbContext context)
+        {
+            _context = context;
+        }
 
         public void Adicionar(UsuarioTDAH usuario)
         {
-        
-            _bancoDeDadosFake.Add(usuario);
+            _context.Usuarios.Add(usuario);
+            _context.SaveChanges();
         }
 
-       
-        public UsuarioTDAH? ObterPorEmail(string email)
+        public bool ExisteEmail(string email)
         {
-        
-            foreach (var item in _bancoDeDadosFake)
-            {
-                if (item.Email == email)
-                {
-                    return item;
-                }
-            }
-            
-        
-            return null; 
+            return _context.Usuarios.Any(u => u.Email == email);
         }
     }
 }

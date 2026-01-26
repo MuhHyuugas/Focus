@@ -1,8 +1,14 @@
 ﻿using System;
 using Focus.Infrastructure.Repositories;
 using Focus.Application.UseCases.Usuarios;
+using Focus.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
-var repositorio = new UserRepository();
+var options = new DbContextOptionsBuilder<AppDbContext>()
+    .UseSqlite("Data Source=app.db")
+    .Options;
+var context = new AppDbContext(options);
+var repositorio = new UserRepository(context);
 var registrarUsuario = new RegistrarUsuario(repositorio);
 
 Console.WriteLine("=== BEM-VINDO AO FOCUS ===");
@@ -38,8 +44,9 @@ while (true)
     Console.Write("\nDeseja cadastrar outro usuário? (s/n): ");
     var resposta = Console.ReadLine();
 
-  
-    if (resposta == "n") {
+
+    if (resposta == "n")
+    {
         break;
     }
 
