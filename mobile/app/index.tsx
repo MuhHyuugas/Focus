@@ -1,0 +1,18 @@
+import { useAuthStateViewModel } from "@/features/auth/presentation/viewmodels/useAuthStateViewModel";
+import { ActivityIndicator, View } from "react-native";
+import AuthView from "./authView";
+import DashboardView from "./dashboardView";
+
+export default function App() {
+  const { isAuthenticated, isLoading } = useAuthStateViewModel();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#179A9B" />
+      </View>
+    );
+  }
+
+  return isAuthenticated ? <DashboardView /> : <AuthView />;
+}
