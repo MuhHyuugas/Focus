@@ -20,3 +20,10 @@ artifacts/
 .DS_Store
 Thumbs.db
 *.db
+
+.mobile/node_modules/
+.mobile/ios/
+.mobile/android/
+.mobile/dist/
+.mobile/build/
+
