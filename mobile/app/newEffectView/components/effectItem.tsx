@@ -32,7 +32,7 @@ const EffectItem = ({
           className="w-12 h-12 justify-start"
           source={image ? image : images.profilePic}
         />
-        <Text className="justify-start text-lg font-semibold">{text}</Text>
+        <Text className="justify-start text-lg font-semibold">{text} </Text>
       </AccordionTrigger>
       <AccordionContent className="flex flex-col gap-4 text-balance justify-start">
         <Text>{description}</Text>

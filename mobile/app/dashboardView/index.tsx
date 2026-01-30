@@ -4,18 +4,22 @@ import { useDashboardViewModel } from "@/features/dashboard/presentation/viewmod
 import { Link, useRouter } from "expo-router";
 import {
   Bell,
-  CalendarDays,
   FastForward,
   PillBottle,
   Plus,
   Share,
 } from "lucide-react-native";
-import { ImageBackground, ScrollView, View } from "react-native";
+import {
+  ImageBackground,
+  ScrollView,
+  View,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import DashboardButton from "./components/dashButton";
 import DashCard from "./components/dashCard";
-
-const ICON_SIZE = 36;
 
 const ELIPSE = images.elipse;
 const ELIPSE_FLIP = images.elipseFlip;
@@ -30,54 +34,56 @@ export default function DashboardView() {
     timeUntilNext,
     confirmEarlyDose,
     streakDays,
-    adherenceRate,
     topSideEffect,
-    totalDoses,
-    bestTime,
+    hasUnreadNotifications,
   } = useDashboardViewModel();
 
   return (
-    <>
+    <SafeAreaView className="flex-1 bg-[#179A9B]" edges={["top"]}>
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-gray-50"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="gap-2">
-          <View className="flex flex-row items-center justify-between p-4 m-2">
-            <Text className="text-2xl font-normal text-foreground">
-              {greeting}, {userName}!
-            </Text>
-            <View className="flex flex-row gap-2 align-center justify-center">
-              <Link href="/reportView">
-                <CalendarDays size={ICON_SIZE} color="black" />
+        <View className="gap-2 flex-1">
+          <View className="flex flex-row items-center justify-between px-6 py-4 bg-[#179A9B] shadow-xl z-50">
+            <View className="flex-row items-center gap-3">
+              <Image source={images.whitelogo} className="w-[8vw] h-[8vw]" />
+              <Text className="text-2xl font-bold text-white">Focus</Text>
+            </View>
+            <View className="flex flex-row gap-2 justify-end p-2">
+              <Link href="/notificationsView" asChild>
+                <TouchableOpacity className="relative bg-white/20 p-2 rounded-full">
+                  <Bell size={24} color="white" />
+                  {hasUnreadNotifications && (
+                    <View className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-[#179A9B]" />
+                  )}
+                </TouchableOpacity>
               </Link>
-              <Link href="/notificationsView">
-                <Bell size={ICON_SIZE} color="black" />
-              </Link>
-              <ProfileAvatar className="w-[10vw] h-[10vw]" withLink />
             </View>
           </View>
-          <View className="gap-4 p-2">
+          <View className="gap-4 p-4">
             <View className="gap-2">
+              <View className="flex flex-row items-center justify-start gap-2 p-2">
+                <ProfileAvatar className="w-[20vw] h-[20vw]" withLink />
+                <Text className="text-2xl font-normal text-foreground">
+                  {greeting}, {userName}!
+                </Text>
+              </View>
               <DashboardButton
-                text={
-                  hasMedications
-                    ? "Meus medicamentos"
-                    : "Adicionar novo medicamento"
-                }
-                icon={hasMedications ? PillBottle : Plus}
+                text="Adicionar novo medicamento"
+                icon={Plus}
                 iconClassName="w-[12vw] h-[12vw]"
-                onPress={() => router.push("/myMedsView")}
+                onPress={() => router.push("/mymeds")}
               />
               <DashboardButton
                 text="Registrar novo efeito colateral"
                 icon={Plus}
                 iconClassName="w-[12vw] h-[12vw]"
-                onPress={() => router.push("/newEffectView")}
+                onPress={() => router.push("/newEffect")}
               />
             </View>
-            {hasMedications && (
+            {hasMedications ? (
               <View className="m-2 flex flex-col justify-between rounded-[24px] bg-[#179A9B] p-4 overflow-hidden relative">
                 <ImageBackground
                   source={images.bgMoons}
@@ -119,35 +125,30 @@ export default function DashboardView() {
                   </>
                 )}
               </View>
+            ) : (
+              <View className="m-2 flex flex-col justify-between rounded-[24px] bg-[#179A9B] p-4 overflow-hidden relative">
+                <ImageBackground
+                  source={images.bgMoons}
+                  resizeMode="cover"
+                  className="absolute right-[-50] top-[-50] w-[300px] h-[300px] opacity-50"
+                ></ImageBackground>
+                <View className="flex flex-row items-center justify-between z-10">
+                  <Text className="p-2 text-xl font-semibold text-primary-foreground flex-1">
+                    Seu calendário de medicação está vazio!
+                  </Text>
+                </View>
+              </View>
             )}
             <View className="p-2">
               <View className="flex flex-row items-center justify-between p-2 pt-4">
                 <Text className="text-2xl font-semibold">Estatísticas</Text>
                 <Share color="black" className="w-[7vw] h-[7vw]" />
               </View>
-
-              <View className="flex-row flex-wrap justify-center pb-4">
+              <View className="flex flex-row items-center justify-between">
                 <DashCard
                   title="Dias de sucesso"
                   counter={streakDays}
                   counterDescription="Seguidos"
-                  backgroundImage={ELIPSE}
-                />
-                <DashCard
-                  title="Aderência 7d"
-                  counter={adherenceRate}
-                  counterDescription="%"
-                  backgroundImage={ELIPSE_FLIP}
-                />
-                <DashCard
-                  title="Doses Totais"
-                  counter={totalDoses}
-                  counterDescription="Doses"
-                  backgroundImage={ELIPSE}
-                />
-                <DashCard
-                  title="Melhor horário"
-                  counter={bestTime}
                   backgroundImage={ELIPSE}
                 />
                 <DashCard
@@ -160,6 +161,6 @@ export default function DashboardView() {
           </View>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }

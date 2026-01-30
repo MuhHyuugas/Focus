@@ -1,4 +1,3 @@
-import { MOCK_MEDICATIONS } from "@/data/mock/database";
 import { Medication } from "@/features/meds/domain/entities/Medication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MedicationRepository } from "../domain/repositories/MedicationRepository";
@@ -102,13 +101,15 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     medId: string,
     time: string,
     date: string,
+    actualTakenTime?: string,
+    medName?: string,
   ): Promise<void> {
     try {
       const key = await this._getTakenDosesKey();
       const existingJson = await AsyncStorage.getItem(key);
       const doses = existingJson ? JSON.parse(existingJson) : [];
 
-      doses.push({ medId, time, date });
+      doses.push({ medId, time, date, actualTakenTime, medName });
 
       await AsyncStorage.setItem(key, JSON.stringify(doses));
 
@@ -118,9 +119,15 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     }
   }
 
-  async getTakenDoses(
-    date: string,
-  ): Promise<{ medId: string; time: string; date: string }[]> {
+  async getTakenDoses(date: string): Promise<
+    {
+      medId: string;
+      time: string;
+      date: string;
+      actualTakenTime?: string;
+      medName?: string;
+    }[]
+  > {
     try {
       const key = await this._getTakenDosesKey();
       const jsonValue = await AsyncStorage.getItem(key);
@@ -133,7 +140,13 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   }
 
   async getAllTakenDoses(): Promise<
-    { date: string; medId: string; time: string }[]
+    {
+      date: string;
+      medId: string;
+      time: string;
+      actualTakenTime?: string;
+      medName?: string;
+    }[]
   > {
     try {
       const key = await this._getTakenDosesKey();

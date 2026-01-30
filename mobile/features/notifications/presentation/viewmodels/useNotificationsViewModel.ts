@@ -19,6 +19,18 @@ export function useNotificationsViewModel() {
     setLoading(true);
     try {
       const notifs = await notificationRepository.getNotifications(); // Busca as notificações
+
+      // Mark all as read immediately when loading
+      const unread = notifs.filter((n) => !n.read);
+      if (unread.length > 0) {
+        for (const u of unread) {
+          await notificationRepository.markAsRead(u.id);
+        }
+        // Update local object status so UI reflects right away if needed,
+        // though typically we just want to clear the global badge.
+        notifs.forEach((n) => (n.read = true));
+      }
+
       const allTakenDoses = await medRepository.getAllTakenDoses(); // Busca as doses tomadas
 
       const items: NotificationItem[] = notifs.map((n) => {
@@ -59,19 +71,34 @@ export function useNotificationsViewModel() {
     )
       return;
 
-    const { medicationId, doseTime } = notification.data;
-    if (!medicationId || !doseTime) return;
+    const { medicationId } = notification.data;
+    if (!medicationId) return;
 
-    const dateStr = notification.date.split("T")[0]; //
+    try {
+      await notificationRepository.markAsRead(notification.id);
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0];
+      const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
 
-    await medRepository.markDoseTaken(medicationId, doseTime, dateStr);
+      // Find med name if possible
+      const allMeds = await medRepository.getMedications();
+      const med = allMeds.find((m) => m.id === medicationId);
+      const medName = med ? med.name : undefined;
 
-    //
-    setNotifications((prev) =>
-      prev.map((item) =>
-        item.id === notification.id ? { ...item, isTaken: true } : item,
-      ),
-    );
+      await medRepository.markDoseTaken(
+        medicationId,
+        timeStr,
+        dateStr,
+        timeStr, // actual time
+        medName,
+      );
+      await loadNotifications();
+    } catch (error) {
+      console.error("Error marking dose:", error);
+    }
   };
 
   return {

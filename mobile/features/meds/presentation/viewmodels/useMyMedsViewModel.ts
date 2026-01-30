@@ -228,13 +228,13 @@ async function scheduleNotificationsForMedication(medication: Medication) {
             color: "#179A9B", // Usando cor de marca (opcional)
           } as any, // 'as any' para permitir channelId se o tipo JS estiver desatualizado
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+            type: "weekly",
             weekday: weekdayDigit,
             hour,
             minute,
             repeats: true,
-            channelId: "default", // Mantemos no trigger também por compatibilidade
-          } as any, // 'as any' para forçar o objeto caso typescript reclame
+            channelId: "default",
+          } as any,
         });
       }
     } else {
@@ -262,4 +262,3 @@ async function scheduleNotificationsForMedication(medication: Medication) {
     }
   }
 }
-

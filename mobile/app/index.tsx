@@ -1,5 +1,6 @@
 import { useAuthStateViewModel } from "@/features/auth/presentation/viewmodels/useAuthStateViewModel";
 import { ActivityIndicator, View } from "react-native";
+import { Redirect } from "expo-router";
 import AuthView from "./authView";
 import DashboardView from "./dashboardView";
 
@@ -14,5 +15,5 @@ export default function App() {
     );
   }
 
-  return isAuthenticated ? <DashboardView /> : <AuthView />;
+  return isAuthenticated ? <Redirect href="/dashboard" /> : <AuthView />;
 }

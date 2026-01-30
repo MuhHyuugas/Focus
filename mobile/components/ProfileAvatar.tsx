@@ -35,7 +35,7 @@ export function ProfileAvatar({
 
   if (withLink) {
     return (
-      <Link href="/userView" asChild>
+      <Link href="/profile" asChild>
         <TouchableOpacity>{AvatarComponent}</TouchableOpacity>
       </Link>
     );

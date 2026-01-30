@@ -88,7 +88,7 @@ export function useAuthViewModel() {
     try {
       await authRepository.login(data.id, data.password);
       await checkAuthState();
-      router.replace("/dashboardView");
+      router.replace("/(tabs)/dashboard");
       resetLoginForm();
     } catch (err: any) {
       setError(err.message || "Erro ao entrar");
@@ -114,7 +114,7 @@ export function useAuthViewModel() {
       // faz o login automático após o cadastro
       await authRepository.login(data.email, data.password);
       await checkAuthState();
-      router.replace("/dashboardView");
+      router.replace("/(tabs)/dashboard");
       resetSignUpForm();
     } catch (err: any) {
       setError(err.message || "Erro ao cadastrar");

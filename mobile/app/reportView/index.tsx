@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { useReportViewModel } from "@/features/report/presentation/viewmodels/useReportViewModel";
-import { Stack } from "expo-router";
+
 import { ScrollView, View } from "react-native";
 import StyledCalendar from "./components/calendar";
 import TreatmentControl from "./components/treatmentControl";
@@ -26,12 +26,6 @@ export default function ReportView() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          ...(screenOptions as any),
-          headerRight: () => <ProfileAvatar className="mr-4" />,
-        }}
-      />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 flex-col gap-6 p-4">
           <Tabs value={activeTab} onValueChange={handleTabChange}>

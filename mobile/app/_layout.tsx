@@ -10,7 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import { useEffect } from "react";
 import { Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const SCREEN_OPTIONS = {
   title: "Focus",
@@ -92,7 +92,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider value={NAV_THEME[colorScheme ?? "light"]}>
           <Stack screenOptions={SCREEN_OPTIONS} />
@@ -100,6 +100,6 @@ export default function RootLayout() {
           <PortalHost />
         </ThemeProvider>
       </AuthProvider>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

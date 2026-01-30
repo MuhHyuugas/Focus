@@ -3,7 +3,7 @@ import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useMyMedsViewModel } from "@/features/meds/presentation/viewmodels/useMyMedsViewModel";
-import { Stack } from "expo-router";
+
 import { PencilLine } from "lucide-react-native";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
 import { useRef, useState } from "react";
@@ -47,7 +47,6 @@ const MyMedsView = () => {
 
   return (
     <>
-      <Stack.Screen options={screenOptions as any} />
       <ScrollView
         ref={scrollRef}
         className="flex-1"

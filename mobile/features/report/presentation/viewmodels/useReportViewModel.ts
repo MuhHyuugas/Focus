@@ -64,9 +64,12 @@ export function useReportViewModel() {
       const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
       const [, month, day] = dose.date.split("-");
 
+      // Prefer the name stored with the dose, fallback to current med list lookup
+      const nameToDisplay = dose.medName || (med ? med.name : "Desconhecido");
+
       return {
         id: `${dose.date}-${dose.time}-${index}`,
-        medicationName: med ? med.name : "Desconhecido",
+        medicationName: nameToDisplay,
         date: `${day}.${month}`,
         time: displayHour.toString(),
         meridiem: isPm ? 2 : 1,

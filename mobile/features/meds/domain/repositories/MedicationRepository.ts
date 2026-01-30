@@ -5,10 +5,30 @@ export interface MedicationRepository {
   saveMedication(medication: Medication): Promise<void>;
   deleteMedication(id: string): Promise<void>;
   clearAll(): Promise<void>;
-  markDoseTaken(medId: string, time: string, date: string): Promise<void>;
-  getTakenDoses(
+  markDoseTaken(
+    medId: string,
+    time: string,
     date: string,
-  ): Promise<{ medId: string; time: string; date: string }[]>;
-  getAllTakenDoses(): Promise<{ medId: string; time: string; date: string }[]>;
+    actualTakenTime?: string,
+    medName?: string,
+  ): Promise<void>;
+  getTakenDoses(date: string): Promise<
+    {
+      medId: string;
+      time: string;
+      date: string;
+      actualTakenTime?: string;
+      medName?: string;
+    }[]
+  >;
+  getAllTakenDoses(): Promise<
+    {
+      medId: string;
+      time: string;
+      date: string;
+      actualTakenTime?: string;
+      medName?: string;
+    }[]
+  >;
   markDateAsTaken(date: string): Promise<void>;
 }
