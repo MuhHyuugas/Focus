@@ -2,6 +2,7 @@ import { RegisterData } from "../domain/entities/RegisterData";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "../domain/entities/User";
 import { AuthRepository } from "../domain/repositories/AuthRepository";
+import api from "@/lib/api";
 
 const USER_STORAGE_KEY = "@focus:key_users";
 const AUTH_STORAGE_KEY = "@focus:isAuthenticated";
@@ -48,9 +49,24 @@ export class AuthRepositoryImpl implements AuthRepository {
       profilePicture: null,
     };
 
-    users.push(newUser);
-    await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
-    return Promise.resolve();
+    try {
+      const [day, month, year] = data.birthDate.split("/");
+      const birthDateForBackend = `${year}-${month}-${day}`;
+
+      await api.post("/api/Usuarios", {
+        Nome: newUser.name,
+        Email: newUser.email,
+        Senha: newUser.password,
+        DataNascimento: birthDateForBackend,
+      });
+
+      users.push(newUser);
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error registering user", error);
+      throw error;
+    }
   }
 
   // função que faz o login

@@ -27,3 +27,7 @@ Thumbs.db
 .mobile/dist/
 .mobile/build/
 
+
+# environment variables
+.mobile/.env
+.env
