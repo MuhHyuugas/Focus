@@ -4,12 +4,15 @@ using Focus.Application.UseCases.Usuarios;
 using Focus.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
+using Focus.Infrastructure.Security;
+
 var options = new DbContextOptionsBuilder<AppDbContext>()
     .UseSqlite("Data Source=app.db")
     .Options;
 var context = new AppDbContext(options);
 var repositorio = new UserRepository(context);
-var registrarUsuario = new RegistrarUsuario(repositorio);
+var passwordHasher = new PasswordHasher();
+var registrarUsuario = new RegistrarUsuario(repositorio, passwordHasher);
 
 Console.WriteLine("=== BEM-VINDO AO FOCUS ===");
 

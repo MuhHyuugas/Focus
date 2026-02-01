@@ -1,50 +1,62 @@
-using Microsoft.AspNetCore.Mvc;
 using Focus.Application.UseCases.Usuarios;
 using Focus.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Focus.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
     public class UsuariosController : ControllerBase
     {
-       
         private readonly RegistrarUsuario _registrarUsuario;
+        private readonly LoginUsuario _loginUsuario;
 
-        
-        public UsuariosController(RegistrarUsuario registrarUsuario)
+        public UsuariosController(RegistrarUsuario registrarUsuario, LoginUsuario loginUsuario)
         {
             _registrarUsuario = registrarUsuario;
+            _loginUsuario = loginUsuario;
         }
 
-        [HttpPost] 
-        public IActionResult Cadastrar(CadastroRequest request)
+        [HttpPost]
+        public IActionResult Registrar([FromBody] RegistroRequest request)
         {
-    
-            
             try
             {
-                
-                _registrarUsuario.Executar(request.Nome, request.Email, request.Senha, request.DataNascimento);
-                
+                var usuario = _registrarUsuario.Executar(request.Nome, request.Email, request.Senha, request.DataNascimento);
 
-                
-                return Ok("Usuário cadastrado com sucesso!");
+                return Created(string.Empty, new
+                {
+                    Message = "Usuário registrado com sucesso",
+                    Usuario = new
+                    {
+                        usuario.Id,
+                        usuario.Nome,
+                        usuario.Email,
+                        usuario.DataNascimento
+                    }
+                });
             }
             catch (Exception ex)
             {
-          
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                var token = _loginUsuario.Executar(request.Email, request.Senha);
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(ex.Message);
             }
         }
     }
 
-    // Essa classe serve apenas para "empacotar" os dados que vêm do Front-end
-    public class CadastroRequest
-    {
-        public string Nome { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Senha { get; set; } = string.Empty;
-        public DateTime DataNascimento { get; set; } 
-    }
+    public record RegistroRequest(string Nome, string Email, string Senha, DateTime DataNascimento);
+    public record LoginRequest(string Email, string Senha);
 }

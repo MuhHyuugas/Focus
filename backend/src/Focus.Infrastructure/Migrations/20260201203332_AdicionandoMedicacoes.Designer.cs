@@ -3,6 +3,7 @@ using System;
 using Focus.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Focus.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260201203332_AdicionandoMedicacoes")]
+    partial class AdicionandoMedicacoes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -65,38 +68,6 @@ namespace Focus.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Medicacoes");
-                });
-
-            modelBuilder.Entity("Focus.Domain.Entities.RegistroDiario", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Ansiedade")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Humor")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("NivelFoco")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Observacoes")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Diarios");
                 });
 
             modelBuilder.Entity("Focus.Domain.Entities.Tratamento", b =>
@@ -171,17 +142,6 @@ namespace Focus.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Tratamento");
-                });
-
-            modelBuilder.Entity("Focus.Domain.Entities.RegistroDiario", b =>
-                {
-                    b.HasOne("Focus.Domain.Entities.UsuarioTDAH", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Focus.Domain.Entities.Tratamento", b =>

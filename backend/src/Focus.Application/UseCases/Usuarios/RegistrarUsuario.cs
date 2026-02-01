@@ -1,15 +1,17 @@
 using System;
 using Focus.Domain.Entities;
 using Focus.Domain.Repositories;
+using Focus.Domain.Security;
 
 namespace Focus.Application.UseCases.Usuarios
 {
-    public class RegistrarUsuario(IUserRepository repository)
+    public class RegistrarUsuario(IUserRepository repository, IPasswordHasher passwordHasher)
     {
         private readonly IUserRepository _repository = repository;
+        private readonly IPasswordHasher _passwordHasher = passwordHasher;
 
 
-        public void Executar(string nome, string email, string senha, DateTime dataNascimento)
+        public UsuarioTDAH Executar(string nome, string email, string senha, DateTime dataNascimento)
         {
 
             var emailJaExiste = _repository.ExisteEmail(email);
@@ -20,12 +22,14 @@ namespace Focus.Application.UseCases.Usuarios
                 throw new Exception("Usuário já existe");
             }
 
+            var passwordHash = _passwordHasher.Hash(senha);
 
-            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email, senha, dataNascimento);
+            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email, passwordHash, dataNascimento);
 
 
             _repository.Adicionar(usuario);
 
+            return usuario;
         }
 
         public void Executar(string email)

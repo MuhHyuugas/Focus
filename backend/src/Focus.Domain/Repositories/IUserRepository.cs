@@ -9,5 +9,7 @@ namespace Focus.Domain.Repositories
 
 
         bool ExisteEmail(string email);
+
+        UsuarioTDAH? ObterPorEmail(string email);
     }
 }

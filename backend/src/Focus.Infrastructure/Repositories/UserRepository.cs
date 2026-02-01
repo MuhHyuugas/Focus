@@ -24,5 +24,10 @@ namespace Focus.Infrastructure.Repositories
         {
             return _context.Usuarios.Any(u => u.Email == email);
         }
+
+        public UsuarioTDAH? ObterPorEmail(string email)
+        {
+            return _context.Usuarios.FirstOrDefault(u => u.Email == email);
+        }
     }
 }
