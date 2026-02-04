@@ -32,11 +32,21 @@ const MedItem = ({ medication, sideEffects }: MedItemProps) => {
   return (
     <View className="p-4 rounded-xl bg-neutral-100">
       <View className="flex-row justify-between items-start">
-        <View className="flex flex-row items-center gap-2">
+        <View className="flex flex-row items-center gap-2 flex-1 pr-2">
           <PillBottle size={36} color="#179A9B" />
-          <View className="p-2">
-            <Text className="text-xl font-semibold">{medication.name}</Text>
-            <Text className="text-xs text-gray-500">
+          <View className="p-2 shrink">
+            <Text
+              className="text-xl font-semibold"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {medication.name}
+            </Text>
+            <Text
+              className="text-xs text-gray-500"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {medication.days.join(", ")}
             </Text>
           </View>

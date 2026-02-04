@@ -71,21 +71,21 @@ export class AuthRepositoryImpl implements AuthRepository {
 
   // função que faz o login
   async login(id: string, password: string): Promise<User> {
-    const users = await this._ensureUsers();
-
-    const user = users.find((u) => {
-      const isEmail = u.email.toLowerCase() === id.toLowerCase();
-      const isPhone = u.phone === id;
-      return (isEmail || isPhone) && u.password === password;
-    });
-
-    if (user) {
-      // Salva sessão
+    try {
+      //faz o login no backend
+      const response = await api.post("/api/Usuarios/login", {
+        email: id,
+        password: password,
+      });
+      //pega o usuario
+      const user = response.data;
+      //salva o usuario no storage
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, "true");
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
       return user;
-    } else {
-      throw new Error("Credenciais inválidas");
+    } catch (error) {
+      console.error("Error logging in", error);
+      throw error;
     }
   }
 
