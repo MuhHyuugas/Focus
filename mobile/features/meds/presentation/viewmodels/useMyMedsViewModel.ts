@@ -1,4 +1,3 @@
-import { MOCK_AVAILABLE_MEDICATIONS } from "@/data/mock/database";
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { Medication } from "@/features/meds/domain/entities/Medication";
 import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
@@ -21,7 +20,7 @@ export const useMyMedsViewModel = () => {
   const [medications, setMedications] = useState<Medication[]>([]); // estado que define os medicamentos
 
   const [editingMedicationId, setEditingMedicationId] = useState<string | null>(
-    null,
+    null
   );
 
   // função que prepara a edição do medicamento
@@ -39,6 +38,10 @@ export const useMyMedsViewModel = () => {
 
   // função que carrega os medicamentos
   const loadMedications = useCallback(async () => {
+    // 1. Sync Catalog in background (Fire & Forget, or await if critical)
+    repository.syncCatalog().catch((e) => console.warn("Sync failed", e));
+
+    // 2. Load User Treatments
     const meds = await repository.getMedications();
     setMedications(meds);
 
@@ -58,7 +61,7 @@ export const useMyMedsViewModel = () => {
   useFocusEffect(
     useCallback(() => {
       loadMedications();
-    }, [loadMedications]),
+    }, [loadMedications])
   );
 
   // função que define os dias selecionados
@@ -119,18 +122,23 @@ export const useMyMedsViewModel = () => {
   };
 
   const [filteredMedications, setFilteredMedications] = useState<
-    { name: string; defaultDosage: string }[]
+    { id: string; name: string; defaultDosage: string }[]
   >([]);
 
   useEffect(() => {
-    if (medicationName) {
-      const filtered = MOCK_AVAILABLE_MEDICATIONS.filter((med) =>
-        med.name.toLowerCase().includes(medicationName.toLowerCase()),
-      );
-      setFilteredMedications(filtered);
-    } else {
-      setFilteredMedications([]);
-    }
+    const search = async () => {
+      if (medicationName && medicationName.length > 1) {
+        // Use Real Repository Search
+        const filtered = await repository.searchCatalog(medicationName);
+        setFilteredMedications(filtered);
+      } else {
+        setFilteredMedications([]);
+      }
+    };
+
+    // Debounce basic implementation
+    const timeout = setTimeout(search, 300);
+    return () => clearTimeout(timeout);
   }, [medicationName]);
 
   const selectMedication = (med: { name: string; defaultDosage: string }) => {
@@ -193,7 +201,7 @@ async function cancelNotificationsForMedication(medicationId: string) {
         notification.identifier.startsWith(`med_${medicationId}_`)
       ) {
         await Notifications.cancelScheduledNotificationAsync(
-          notification.identifier,
+          notification.identifier
         );
       }
     }

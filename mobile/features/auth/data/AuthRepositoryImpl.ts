@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "../domain/entities/User";
 import { AuthRepository } from "../domain/repositories/AuthRepository";
 import api from "@/lib/api";
+import { DatabaseService } from "@/data/local/DatabaseService";
 
 const USER_STORAGE_KEY = "@focus:key_users";
 const AUTH_STORAGE_KEY = "@focus:isAuthenticated";
@@ -10,32 +11,16 @@ const CURRENT_USER_KEY = "@focus:currentUser";
 
 //classe que implementa o repositorio de autenticação
 export class AuthRepositoryImpl implements AuthRepository {
-  //
-  private async _ensureUsers(): Promise<User[]> {
-    try {
-      const usersJson = await AsyncStorage.getItem(USER_STORAGE_KEY);
-      if (usersJson) {
-        return JSON.parse(usersJson);
-      }
-      // Se vazio, retorna vazio
-      if (!usersJson) {
-        return [];
-      }
-      return JSON.parse(usersJson);
-    } catch (e) {
-      console.error("Error ensuring users", e);
-      return [];
-    }
-  }
-
+  private db = DatabaseService.getInstance();
   async register(data: RegisterData): Promise<void> {
-    const users = await this._ensureUsers();
 
-    // verifica se o usuario ja existe
-    const exists = users.some(
-      (u) => u.email === data.email || u.phone === data.phone,
+    // verifica se o usuario ja existe (SQLite)
+    const existing = await this.db.executeQuery(
+      "SELECT id FROM users WHERE email = ? OR telefone = ? LIMIT 1",
+      [data.email, data.phone]
     );
-    if (exists) {
+
+    if (existing.length > 0) {
       throw new Error("Usuário já cadastrado.");
     }
 
@@ -49,9 +34,24 @@ export class AuthRepositoryImpl implements AuthRepository {
       profilePicture: null,
     };
 
-    // 1. Save Locally FIRST (Offline-First)
-    users.push(newUser);
-    await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+    const now = Date.now();
+
+    // 1. Save Locally FIRST (Offline-First) - INSERT into SQLite
+    await this.db.executeQuery(
+      `INSERT INTO users (id, nome, email, senha_hash, telefone, data_nascimento, avatar, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newUser.id,
+        newUser.name,
+        newUser.email,
+        newUser.password,
+        newUser.phone,
+        newUser.birthDate,
+        null, // avatar
+        now,
+        now
+      ]
+    );
 
     // 2. Try Sync with Backend (Non-blocking)
     try {
@@ -74,21 +74,31 @@ export class AuthRepositoryImpl implements AuthRepository {
 
   // função que faz o login
   async login(id: string, password: string): Promise<User> {
-    try {
-      //faz o login no backend
-      const response = await api.post("/api/Usuarios/login", {
-        email: id,
-        password: password,
-      });
-      //pega o usuario
-      const user = response.data;
-      //salva o usuario no storage
+    // Busca no SQLite
+    // Suporta login por Email ou Telefone
+    const rows = await this.db.executeQuery(
+      "SELECT * FROM users WHERE (email = ? OR telefone = ?) AND senha_hash = ? LIMIT 1",
+      [id, id, password]
+    );
+
+    if (rows.length > 0) {
+      const row = rows[0];
+      const user: User = {
+        id: row.id,
+        name: row.nome,
+        email: row.email,
+        phone: row.telefone,
+        birthDate: row.data_nascimento,
+        password: row.senha_hash,
+        profilePicture: row.avatar ? JSON.parse(row.avatar) : null // Avatar might interpret based on how we save
+      };
+
+      // Salva sessão (AsyncStorage ainda é útil para persistir QUEM está logado)
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, "true");
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
       return user;
-    } catch (error) {
-      console.error("Error logging in", error);
-      throw error;
+    } else {
+      throw new Error("Credenciais inválidas");
     }
   }
 
@@ -130,13 +140,22 @@ export class AuthRepositoryImpl implements AuthRepository {
       // 1. Atualizar sessão atual
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 
-      // 2. Atualizar lista de usuários
-      const users = await this._ensureUsers();
-      const index = users.findIndex((u) => u.id === user.id);
-      if (index !== -1) {
-        users[index] = user;
-        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
-      }
+      // 2. Atualizar SQLite
+      await this.db.executeQuery(
+        `UPDATE users SET nome = ?, email = ?, senha_hash = ?, telefone = ?, data_nascimento = ?, avatar = ?, updated_at = ?
+         WHERE id = ?`,
+        [
+          user.name,
+          user.email,
+          user.password,
+          user.phone,
+          user.birthDate,
+          user.profilePicture, // assuming image uri string
+          Date.now(),
+          user.id
+        ]
+      );
+
     } catch (error) {
       console.error("Error saving user:", error);
       throw new Error("Erro ao salvar usuário");
@@ -146,10 +165,8 @@ export class AuthRepositoryImpl implements AuthRepository {
   // função que deleta o usuario
   async deleteUser(id: string): Promise<void> {
     try {
-      // 1. Remove da lista de usuários
-      const users = await this._ensureUsers();
-      const newUsers = users.filter((u) => u.id !== id);
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUsers));
+      // 1. Remove do SQLite
+      await this.db.executeQuery("DELETE FROM users WHERE id = ?", [id]);
 
       // 2. Se for o usuário atual, faz logout
       const currentUser = await this.getCurrentUser();

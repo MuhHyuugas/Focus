@@ -35,4 +35,6 @@ export interface MedicationRepository {
     }[]
   >;
   markDateAsTaken(date: string): Promise<void>;
+  syncCatalog(): Promise<void>;
+  searchCatalog(query: string): Promise<{ id: string; name: string; defaultDosage: string }[]>;
 }

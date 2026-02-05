@@ -21,12 +21,20 @@ namespace Focus.Infrastructure.Data
 
             modelBuilder.Entity<UsuarioTDAH>(entity =>
             {
+                entity.ToTable("users");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Email).IsRequired();
             });
 
+            modelBuilder.Entity<Medicacao>(entity =>
+            {
+                entity.ToTable("medications");
+                entity.HasKey(e => e.Id);
+            });
+
             modelBuilder.Entity<Tratamento>(entity =>
             {
+                entity.ToTable("treatments");
                 entity.HasKey(e => e.Id);
                 entity.HasOne(e => e.Usuario)
                     .WithMany()
@@ -38,6 +46,7 @@ namespace Focus.Infrastructure.Data
 
             modelBuilder.Entity<Lembrete>(entity =>
             {
+                entity.ToTable("reminders");
                 entity.HasKey(e => e.Id);
                 entity.HasOne(e => e.Tratamento)
                     .WithMany()
@@ -46,6 +55,7 @@ namespace Focus.Infrastructure.Data
 
             modelBuilder.Entity<RegistroDiario>(entity =>
             {
+                entity.ToTable("daily_records");
                 entity.HasKey(e => e.Id);
                 entity.HasOne(e => e.Usuario)
                     .WithMany()

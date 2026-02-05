@@ -58,4 +58,11 @@ export class MockUserRepository implements AuthRepository {
     }
     return Promise.resolve();
   }
+  async deleteUser(id: string): Promise<void> {
+    const index = MockUserRepository.users.findIndex((u) => u.id === id);
+    if (index !== -1) {
+      MockUserRepository.users.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
 }

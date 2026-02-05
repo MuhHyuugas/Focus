@@ -16,7 +16,7 @@ export class DatabaseService {
   public async initDb(): Promise<void> {
     if (this.db) return;
 
-    this.db = await SQLite.openDatabaseAsync("focus.db");
+    this.db = await SQLite.openDatabaseAsync("focus_v2.db");
 
     await this.db.execAsync(`
       PRAGMA foreign_keys = ON;
@@ -84,6 +84,7 @@ export class DatabaseService {
     const isSelect = query.trim().toUpperCase().startsWith("SELECT");
 
     try {
+      console.log(`[SQLite] Executing: ${query} | Params: ${JSON.stringify(params)}`);
       if (isSelect) {
         return await this.db.getAllAsync(query, params);
       } else {
