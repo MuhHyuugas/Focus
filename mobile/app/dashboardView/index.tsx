@@ -5,7 +5,6 @@ import { Link, useRouter } from "expo-router";
 import {
   Bell,
   FastForward,
-  PillBottle,
   Plus,
   Share,
 } from "lucide-react-native";
@@ -20,6 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import DashboardButton from "./components/dashButton";
 import DashCard from "./components/dashCard";
+import SymptomModal from "./components/SymptomModal";
+import { useState } from "react";
 
 const ELIPSE = images.elipse;
 const ELIPSE_FLIP = images.elipseFlip;
@@ -37,6 +38,8 @@ export default function DashboardView() {
     topSideEffect,
     hasUnreadNotifications,
   } = useDashboardViewModel();
+
+  const [modalVisible, setModalVisible] = useState(false);
 
   return (
     <SafeAreaView className="flex-1 bg-[#179A9B]" edges={["top"]}>
@@ -120,7 +123,7 @@ export default function DashboardView() {
                       text="Confirmar dose antecipada"
                       icon={FastForward}
                       iconClassName="w-[8vw] h-[8vw]"
-                      onPress={confirmEarlyDose}
+                      onPress={() => setModalVisible(true)}
                     />
                   </>
                 )}
@@ -161,6 +164,15 @@ export default function DashboardView() {
           </View>
         </View>
       </ScrollView>
+
+      <SymptomModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onConfirm={async (data) => {
+          await confirmEarlyDose(data.mood, data.anxiety, data.focus, data.notes);
+          setModalVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

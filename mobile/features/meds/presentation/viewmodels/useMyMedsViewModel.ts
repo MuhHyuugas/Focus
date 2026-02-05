@@ -17,6 +17,7 @@ export const useMyMedsViewModel = () => {
   const [selectedDays, setSelectedDays] = useState<string[]>([]); // estado que define os dias selecionados
   const [times, setTimes] = useState<string[]>(["08:00"]); // estado que define as horas selecionadas
   const [medicationName, setMedicationName] = useState(""); // estado que define o nome do medicamento
+  const [dosage, setDosage] = useState(""); // estado da dosagem
   const [medications, setMedications] = useState<Medication[]>([]); // estado que define os medicamentos
 
   const [editingMedicationId, setEditingMedicationId] = useState<string | null>(
@@ -26,6 +27,7 @@ export const useMyMedsViewModel = () => {
   // função que prepara a edição do medicamento
   const prepareEdit = (medication: Medication) => {
     setMedicationName(medication.name);
+    setDosage(medication.dosage || "");
     setSelectedDays(medication.days);
     setTimes(medication.times);
     setEditingMedicationId(medication.id);
@@ -88,8 +90,9 @@ export const useMyMedsViewModel = () => {
 
     // função que cria o medicamento
     const newMedication: Medication = {
-      id: editingMedicationId || Date.now().toString(),
+      id: editingMedicationId || "", // Envia vazio para o repo gerar o UUID
       name: medicationName,
+      dosage: dosage,
       days: selectedDays,
       times: times,
     };
@@ -105,6 +108,7 @@ export const useMyMedsViewModel = () => {
       }
 
       setMedicationName("");
+      setDosage("");
       setSelectedDays([]);
       setTimes(["08:00"]);
       setEditingMedicationId(null);
@@ -114,12 +118,14 @@ export const useMyMedsViewModel = () => {
     }
   };
 
-  const [filteredMedications, setFilteredMedications] = useState<string[]>([]);
+  const [filteredMedications, setFilteredMedications] = useState<
+    { name: string; defaultDosage: string }[]
+  >([]);
 
   useEffect(() => {
     if (medicationName) {
       const filtered = MOCK_AVAILABLE_MEDICATIONS.filter((med) =>
-        med.toLowerCase().includes(medicationName.toLowerCase()),
+        med.name.toLowerCase().includes(medicationName.toLowerCase()),
       );
       setFilteredMedications(filtered);
     } else {
@@ -127,8 +133,9 @@ export const useMyMedsViewModel = () => {
     }
   }, [medicationName]);
 
-  const selectMedication = (name: string) => {
-    setMedicationName(name);
+  const selectMedication = (med: { name: string; defaultDosage: string }) => {
+    setMedicationName(med.name);
+    setDosage(med.defaultDosage); // Auto-fill dosage
     setFilteredMedications([]);
   };
 
@@ -147,6 +154,8 @@ export const useMyMedsViewModel = () => {
   return {
     medicationName,
     setMedicationName,
+    dosage,
+    setDosage,
     selectedDays,
     toggleDay,
     times,

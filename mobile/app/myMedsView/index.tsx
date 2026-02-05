@@ -1,5 +1,5 @@
 import { images } from "@/assets/assets";
-import { ProfileAvatar } from "@/components/ProfileAvatar";
+
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useMyMedsViewModel } from "@/features/meds/presentation/viewmodels/useMyMedsViewModel";
@@ -11,17 +11,7 @@ import DaySelector from "./components/daySelector";
 import MedItem from "./components/medItem";
 import TimeSelector from "./components/timeSelector";
 
-const screenOptions = {
-  headerShown: true,
-  headerTitle: "Meus Medicamentos",
-  headerTitleStyle: {
-    fontWeight: "600" as const,
-  },
-  headerStyle: {
-    backgroundColor: "#ffffff",
-  },
-  headerRight: () => <ProfileAvatar className="mr-4" />,
-};
+
 const MyMedsView = () => {
   const {
     medicationName,
@@ -40,6 +30,7 @@ const MyMedsView = () => {
     editingMedicationId,
     sideEffectsMap,
     clearHistory,
+    dosage,
   } = useMyMedsViewModel();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -86,16 +77,29 @@ const MyMedsView = () => {
                         >
                           {filteredMedications.map((item) => (
                             <TouchableOpacity
-                              key={item}
+                              key={item.name}
                               onPress={() => selectMedication(item)}
                               className="p-3 border-b border-gray-100"
                             >
-                              <Text>{item}</Text>
+                              <Text>{item.name}</Text>
                             </TouchableOpacity>
                           ))}
                         </ScrollView>
                       </View>
                     )}
+                  </View>
+                </View>
+
+                <View className="flex flex-row items-center gap-2">
+                  <Text>Dosagem:</Text>
+                  <View className="flex-1">
+                    <Input
+                      placeholder="Dosagem (Automático)"
+                      value={dosage}
+                      editable={false}
+                      className="text-base bg-gray-100 text-gray-500"
+                      containerClassName="flex-1"
+                    />
                   </View>
                 </View>
 
@@ -151,9 +155,8 @@ const MyMedsView = () => {
               className="justify-end items-end text-primary-foreground mx-4 "
             >
               <View
-                className={`flex flex-row items-center justify-between p-2 px-4 rounded-full shadow-lg ${
-                  isEditing ? "bg-red-500" : "bg-[#179A9B]"
-                }`}
+                className={`flex flex-row items-center justify-between p-2 px-4 rounded-full shadow-lg ${isEditing ? "bg-red-500" : "bg-[#179A9B]"
+                  }`}
               >
                 <Text className="text-base text-white font-semibold px-2">
                   {isEditing ? "Parar edição" : "Editar medicamentos"}
@@ -172,9 +175,8 @@ const MyMedsView = () => {
                   }}
                 >
                   <View
-                    className={`rounded-xl ${
-                      isEditing ? "border-2 border-[#179A9B]" : ""
-                    }`}
+                    className={`rounded-xl ${isEditing ? "border-2 border-[#179A9B]" : ""
+                      }`}
                   >
                     <MedItem
                       medication={med}

@@ -2,7 +2,7 @@ import { useAuthStateViewModel } from "@/features/auth/presentation/viewmodels/u
 import { ActivityIndicator, View } from "react-native";
 import { Redirect } from "expo-router";
 import AuthView from "./authView";
-import DashboardView from "./dashboardView";
+
 
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStateViewModel();

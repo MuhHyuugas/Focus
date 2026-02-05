@@ -1,4 +1,5 @@
 import "@/global.css";
+import { DatabaseService } from "../data/local/DatabaseService";
 import { AuthProvider } from "@/features/auth/presentation/contexts/AuthContext";
 import { NotificationRepositoryImpl } from "@/features/notifications/data/NotificationRepositoryImpl";
 import { NAV_THEME } from "@/lib/theme";
@@ -22,6 +23,18 @@ export { ErrorBoundary } from "expo-router";
 export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
   setColorScheme("light");
+
+  useEffect(() => {
+    const initDB = async () => {
+      try {
+        await DatabaseService.getInstance().initDb();
+        console.log("✅ SQLite inicializado com sucesso!");
+      } catch (e) {
+        console.error("❌ Falha ao inicializar SQLite:", e);
+      }
+    };
+    initDB();
+  }, []);
 
   useEffect(() => {
     async function setupNotifications() {

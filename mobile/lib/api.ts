@@ -4,6 +4,8 @@ const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
 });
 
+console.log("🔌 API Configured URL:", process.env.EXPO_PUBLIC_API_URL);
+
 // Interceptor para logs de requisição
 api.interceptors.request.use((request) => {
   console.log("Starting Request", JSON.stringify(request, null, 2));

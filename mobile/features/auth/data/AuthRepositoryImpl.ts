@@ -49,6 +49,11 @@ export class AuthRepositoryImpl implements AuthRepository {
       profilePicture: null,
     };
 
+    // 1. Save Locally FIRST (Offline-First)
+    users.push(newUser);
+    await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+
+    // 2. Try Sync with Backend (Non-blocking)
     try {
       const [day, month, year] = data.birthDate.split("/");
       const birthDateForBackend = `${year}-${month}-${day}`;
@@ -59,14 +64,12 @@ export class AuthRepositoryImpl implements AuthRepository {
         Senha: newUser.password,
         DataNascimento: birthDateForBackend,
       });
-
-      users.push(newUser);
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
-      return Promise.resolve();
     } catch (error) {
-      console.error("Error registering user", error);
-      throw error;
+      // Just log the error, don't stop the user flow
+      console.error("Error syncing user to backend (continuing in offline mode):", error);
     }
+
+    return Promise.resolve();
   }
 
   // função que faz o login

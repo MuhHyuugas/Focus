@@ -11,6 +11,10 @@ export interface MedicationRepository {
     date: string,
     actualTakenTime?: string,
     medName?: string,
+    mood?: number,
+    anxiety?: boolean,
+    focus?: number,
+    notes?: string
   ): Promise<void>;
   getTakenDoses(date: string): Promise<
     {

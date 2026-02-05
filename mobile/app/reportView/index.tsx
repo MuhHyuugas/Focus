@@ -1,4 +1,4 @@
-import { ProfileAvatar } from "@/components/ProfileAvatar";
+
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
@@ -16,7 +16,7 @@ export default function ReportView() {
     handleMonthChange,
     handleDayPress,
     handleMonthSelect,
-    screenOptions,
+
     markedDates,
     currentDate,
     setCurrentDate,

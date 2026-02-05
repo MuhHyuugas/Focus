@@ -192,7 +192,12 @@ export const useDashboardViewModel = () => {
     }
   };
 
-  const confirmEarlyDose = async () => {
+  const confirmEarlyDose = async (
+    mood?: number,
+    anxiety?: boolean,
+    focus?: number,
+    notes?: string,
+  ) => {
     if (nextMedication && nextMedicationTime) {
       const now = new Date();
       const todayDate = now.toISOString().split("T")[0];
@@ -207,6 +212,10 @@ export const useDashboardViewModel = () => {
         todayDate,
         actualTime,
         nextMedication.name,
+        mood,
+        anxiety,
+        focus,
+        notes,
       );
       await repository.markDateAsTaken(todayDate);
       await checkMedications();

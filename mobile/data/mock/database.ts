@@ -13,7 +13,7 @@ export const MOCK_USERS: User[] = [
     phone: "(11) 99999-9999",
     birthDate: "1990-01-01",
     password: "123",
-    profilePicture: images.profileCarlo,
+    profilePicture: images.profilePic,
   },
   {
     id: "user-124",
@@ -28,16 +28,17 @@ export const MOCK_USERS: User[] = [
 
 // --- Mock Medications ---
 // List of available medications for search suggestions
+// List of available medications for search suggestions
 export const MOCK_AVAILABLE_MEDICATIONS = [
-  "Ritalina (Metilfenidato)",
-  "Concerta",
-  "Venvanse (Lisdexanfetamina)",
-  "Stavigile (Modafinila)",
-  "Atentah (Atomoxetina)",
-  "Ritalina LA",
-  "Metilfenidato Genérico",
-  "Consiv",
-  "Juneve",
+  { name: "Ritalina (Metilfenidato)", defaultDosage: "10mg" },
+  { name: "Concerta", defaultDosage: "18mg" },
+  { name: "Venvanse (Lisdexanfetamina)", defaultDosage: "30mg" },
+  { name: "Stavigile (Modafinila)", defaultDosage: "100mg" },
+  { name: "Atentah (Atomoxetina)", defaultDosage: "40mg" },
+  { name: "Ritalina LA", defaultDosage: "20mg" },
+  { name: "Metilfenidato Genérico", defaultDosage: "10mg" },
+  { name: "Consiv", defaultDosage: "36mg" },
+  { name: "Juneve", defaultDosage: "30mg" },
 ];
 
 export const MOCK_MEDICATIONS: Medication[] = [

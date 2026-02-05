@@ -1,12 +1,15 @@
 import { Medication } from "@/features/meds/domain/entities/Medication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MedicationRepository } from "../domain/repositories/MedicationRepository";
+import { DatabaseService } from "@/data/local/DatabaseService";
+import * as Crypto from "expo-crypto"; // Para gerar UUIDs
 
 // Keys
 const CURRENT_USER_KEY = "@focus:currentUser";
-const REPORT_MARKED_DATES_KEY = "@focus:marked_dates";
 
 export class MedicationRepositoryImpl implements MedicationRepository {
+  private db = DatabaseService.getInstance();
+
   private async _getUserId(): Promise<string> {
     try {
       const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
@@ -25,97 +28,151 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     }
   }
 
-  private async _getMedicationsKey(): Promise<string> {
-    const userId = await this._getUserId();
-    return `@focus:medications:${userId}`;
-  }
-
-  private async _getTakenDosesKey(): Promise<string> {
-    const userId = await this._getUserId();
-    return `@focus:taken_doses:${userId}`;
-  }
-
   async getMedications(): Promise<Medication[]> {
     try {
-      const key = await this._getMedicationsKey();
-      console.log(`MedicationRepository: Getting medications for key: ${key}`);
-      const jsonValue = await AsyncStorage.getItem(key);
-      console.log(
-        `MedicationRepository: Found ${jsonValue ? "data" : "no data"} for key ${key}`,
-      );
+      const userId = await this._getUserId();
 
-      if (jsonValue != null) {
-        return JSON.parse(jsonValue);
-      }
+      // JOIN entre Tratamentos e Medicamentos para montar o objeto completo
+      const query = `
+        SELECT 
+          t.id, 
+          m.nome as name, 
+          t.dias, 
+          t.horarios as times, 
+          t.dose 
+        FROM treatments t
+        JOIN medications m ON t.id_medicamento = m.id
+        WHERE t.id_usuario = ?
+      `;
 
-      // No seeding - Start empty
-      return [];
+      const rows = await this.db.executeQuery(query, [userId]);
+
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        days: JSON.parse(row.dias),
+        times: JSON.parse(row.times),
+        // dose: row.dose
+      }));
     } catch (e) {
-      console.error("Error getting medications", e);
+      console.error("Error getting medications from SQLite", e);
       return [];
     }
   }
 
   async saveMedication(medication: Medication): Promise<void> {
     try {
-      const key = await this._getMedicationsKey();
-      console.log(`MedicationRepository: Saving medication to key: ${key}`);
-      const meds = await this.getMedications();
+      const userId = await this._getUserId();
+      const now = Date.now();
 
-      const index = meds.findIndex((m) => m.id === medication.id);
-      if (index !== -1) {
-        meds[index] = medication;
+      // 1. Verificar se o medicamento (droga) já existe no catálogo, se não, criar.
+      // Por simplificação, vamos buscar pelo nome.
+      let medId = "";
+      const existingMeds = await this.db.executeQuery(
+        "SELECT id FROM medications WHERE nome = ? LIMIT 1",
+        [medication.name]
+      );
+
+      if (existingMeds.length > 0) {
+        medId = existingMeds[0].id;
       } else {
-        meds.push(medication);
+        medId = Crypto.randomUUID();
+        await this.db.executeQuery(
+          "INSERT INTO medications (id, nome, dosagem_padrao, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+          [medId, medication.name, medication.dosage || null, now, now]
+        );
       }
 
-      await AsyncStorage.setItem(key, JSON.stringify(meds));
-      console.log("MedicationRepository: Save successful");
+      // 2. Salvar ou Atualizar o Tratamento (Vínculo User <-> Med)
+      // Se o ID do tratamento já existe (edição), atualizamos.
+      // Se não (novo), inserimos.
+
+      // Verifica se é um update (se o ID já existe na tabela treatments)
+      const existingTreatment = await this.db.executeQuery(
+        "SELECT id FROM treatments WHERE id = ?",
+        [medication.id]
+      );
+
+      const daysJson = JSON.stringify(medication.days);
+      const timesJson = JSON.stringify(medication.times);
+
+      if (existingTreatment.length > 0) {
+        await this.db.executeQuery(
+          `UPDATE treatments SET 
+            id_medicamento = ?, dias = ?, horarios = ?, dose = ?, updated_at = ? 
+           WHERE id = ?`,
+          [medId, daysJson, timesJson, medication.dosage || null, now, medication.id]
+        );
+      } else {
+        // Se o ID vier vazio ou for novo, gera um UUID
+        const treatmentId = medication.id || Crypto.randomUUID();
+        await this.db.executeQuery(
+          `INSERT INTO treatments (id, id_usuario, id_medicamento, dias, horarios, dose, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [treatmentId, userId, medId, daysJson, timesJson, medication.dosage || null, now, now]
+        );
+      }
     } catch (e) {
-      console.error("Error saving medication", e);
+      console.error("Error saving medication to SQLite", e);
       throw new Error("Failed to save medication");
     }
   }
 
   async deleteMedication(id: string): Promise<void> {
     try {
-      const key = await this._getMedicationsKey();
-      const meds = await this.getMedications();
-      const newMeds = meds.filter((m) => m.id !== id);
-      await AsyncStorage.setItem(key, JSON.stringify(newMeds));
+      // Deleta o tratamento. O registro em 'medications' (catálogo) permanece.
+      await this.db.executeQuery("DELETE FROM treatments WHERE id = ?", [id]);
     } catch (e) {
-      console.error("Error deleting medication", e);
+      console.error("Error deleting medication from SQLite", e);
     }
   }
 
   async clearAll(): Promise<void> {
     try {
-      const key = await this._getMedicationsKey();
-      await AsyncStorage.removeItem(key);
+      const userId = await this._getUserId();
+      await this.db.executeQuery("DELETE FROM treatments WHERE id_usuario = ?", [userId]);
     } catch (e) {
-      console.error("Error clearing medications", e);
+      console.error("Error clearing medications from SQLite", e);
     }
   }
 
   async markDoseTaken(
     medId: string,
-    time: string,
-    date: string,
+    time: string,  // Horário planejado (ex: "08:00")
+    date: string,  // Data planejada (ex: "2023-10-27")
     actualTakenTime?: string,
     medName?: string,
+    mood?: number,
+    anxiety?: boolean,
+    focus?: number,
+    notes?: string
   ): Promise<void> {
     try {
-      const key = await this._getTakenDosesKey();
-      const existingJson = await AsyncStorage.getItem(key);
-      const doses = existingJson ? JSON.parse(existingJson) : [];
+      const now = Date.now();
+      const logId = Crypto.randomUUID();
 
-      doses.push({ medId, time, date, actualTakenTime, medName });
+      // Constrói ISO strings para o banco
+      const scheduledIso = `${date}T${time}:00.000Z`;
+      const takenIso = actualTakenTime ? `${date}T${actualTakenTime}:00.000Z` : new Date().toISOString();
 
-      await AsyncStorage.setItem(key, JSON.stringify(doses));
-
-      await this._updateCalendarMark(date);
+      await this.db.executeQuery(
+        `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, humor, ansiedade, foco, notas, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          logId,
+          medId,
+          scheduledIso,
+          takenIso,
+          mood ?? null,
+          anxiety ? 1 : 0,
+          focus ?? null,
+          notes ?? null,
+          now,
+          now
+        ]
+      );
     } catch (e) {
-      console.error("Error marking dose taken", e);
+      console.error("Error marking dose taken in SQLite", e);
     }
   }
 
@@ -129,12 +186,25 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     }[]
   > {
     try {
-      const key = await this._getTakenDosesKey();
-      const jsonValue = await AsyncStorage.getItem(key);
-      const doses = jsonValue ? JSON.parse(jsonValue) : [];
-      return doses.filter((d: any) => d.date === date);
+      // Busca doses onde horario_plano começa com a data solicitada
+      const query = `
+        SELECT 
+          d.id_tratamento as medId,
+          d.horario_plano,
+          d.horario_tomado
+        FROM dose_logs d
+        WHERE d.horario_plano LIKE ?
+      `;
+      const rows = await this.db.executeQuery(query, [`${date}%`]);
+
+      return rows.map(row => ({
+        medId: row.medId,
+        date: row.horario_plano.split('T')[0],
+        time: row.horario_plano.split('T')[1].substring(0, 5),
+        actualTakenTime: row.horario_tomado.split('T')[1].substring(0, 5)
+      }));
     } catch (e) {
-      console.error("Error getting taken doses", e);
+      console.error("Error getting taken doses from SQLite", e);
       return [];
     }
   }
@@ -149,36 +219,39 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     }[]
   > {
     try {
-      const key = await this._getTakenDosesKey();
-      const jsonValue = await AsyncStorage.getItem(key);
-      return jsonValue ? JSON.parse(jsonValue) : [];
+      const userId = await this._getUserId();
+
+      // JOIN complexo para pegar o nome do medicamento através do tratamento
+      const query = `
+        SELECT 
+          d.horario_plano,
+          d.horario_tomado,
+          t.id as medId,
+          m.nome as medName
+        FROM dose_logs d
+        JOIN treatments t ON d.id_tratamento = t.id
+        JOIN medications m ON t.id_medicamento = m.id
+        WHERE t.id_usuario = ?
+      `;
+
+      const rows = await this.db.executeQuery(query, [userId]);
+
+      return rows.map(row => ({
+        date: row.horario_plano.split('T')[0],
+        time: row.horario_plano.split('T')[1].substring(0, 5),
+        medId: row.medId,
+        medName: row.medName,
+        actualTakenTime: row.horario_tomado.split('T')[1].substring(0, 5)
+      }));
     } catch (e) {
-      console.error("Error getting all taken doses", e);
+      console.error("Error getting all taken doses from SQLite", e);
       return [];
     }
   }
 
   async markDateAsTaken(date: string): Promise<void> {
-    await this._updateCalendarMark(date);
-  }
-
-  private async _updateCalendarMark(date: string) {
-    try {
-      const jsonValue = await AsyncStorage.getItem(REPORT_MARKED_DATES_KEY);
-      const dates = jsonValue != null ? JSON.parse(jsonValue) : {};
-
-      dates[date] = {
-        selected: true,
-        marked: true,
-        selectedColor: "#179A9B",
-      };
-
-      await AsyncStorage.setItem(
-        REPORT_MARKED_DATES_KEY,
-        JSON.stringify(dates),
-      );
-    } catch (e) {
-      console.error("Error updating calendar", e);
-    }
+    // No SQLite, não precisamos salvar "datas marcadas" separadamente.
+    // O calendário será gerado dinamicamente consultando a tabela dose_logs.
+    // Método mantido vazio para compatibilidade com a interface.
   }
 }
