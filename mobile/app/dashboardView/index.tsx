@@ -145,7 +145,6 @@ export default function DashboardView() {
             <View className="p-2">
               <View className="flex flex-row items-center justify-between p-2 pt-4">
                 <Text className="text-2xl font-semibold">Estatísticas</Text>
-                <Share color="black" className="w-[7vw] h-[7vw]" />
               </View>
               <View className="flex flex-row items-center justify-between">
                 <DashCard

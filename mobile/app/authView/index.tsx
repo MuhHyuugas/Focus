@@ -29,6 +29,7 @@ export default function AuthView() {
         start={{ x: 0.1, y: 0.2 }}
         end={{ x: 0.9, y: 0.8 }}
         className="flex-1"
+        style={{ flex: 1 }}
       >
         <SafeAreaView className="flex-1">
           <View className="flex-1 gap-8">
