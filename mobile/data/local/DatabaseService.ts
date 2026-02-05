@@ -1,4 +1,6 @@
 import * as SQLite from "expo-sqlite";
+import * as Crypto from "expo-crypto";
+import { SEED_MEDICATIONS } from "./SeedData";
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -68,6 +70,33 @@ export class DatabaseService {
         FOREIGN KEY (id_tratamento) REFERENCES treatments (id)
       );
     `);
+
+    await this.seed();
+  }
+
+  private async seed() {
+    try {
+      if (!this.db) return;
+
+      const result = await this.db.getAllAsync<{ count: number }>("SELECT count(*) as count FROM medications");
+      const count = result[0]?.count || 0;
+
+      if (count === 0) {
+        console.log("[DatabaseService] Seeding database with initial medications...");
+        const now = Date.now();
+
+        for (const med of SEED_MEDICATIONS) {
+          const id = Crypto.randomUUID();
+          await this.db.runAsync(
+            "INSERT INTO medications (id, nome, dosagem_padrao, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            [id, med.name, med.dosage, now, now]
+          );
+        }
+        console.log(`[DatabaseService] Seeded ${SEED_MEDICATIONS.length} medications.`);
+      }
+    } catch (e) {
+      console.error("Error seeding database:", e);
+    }
   }
 
   public async executeQuery(query: string, params: any[] = []): Promise<any[]> {

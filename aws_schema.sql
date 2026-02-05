@@ -2,13 +2,24 @@
 -- This schema defines the tables required by the Focus Mobile App.
 -- Hand this file to the Backend Developer.
 
--- 1. Medications Catalog (Admin Managed)
+-- 1. Users (Sync Target)
+CREATE TABLE IF NOT EXISTS users (
+    id CHAR(36) PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    senha_hash VARCHAR(255), -- Helper for backend auth if needed
+    telefone VARCHAR(20),
+    avatar VARCHAR(255),
+    data_nascimento DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 2. Medications Catalog (Admin Managed)
 CREATE TABLE IF NOT EXISTS medications (
     id CHAR(36) PRIMARY KEY, -- UUID
     nome VARCHAR(255) NOT NULL,
     dosagem_padrao VARCHAR(50), -- e.g., "10mg"
-    laboratorio VARCHAR(255),
-    bula_url VARCHAR(500),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -27,8 +38,8 @@ CREATE TABLE IF NOT EXISTS treatments (
     data_fim DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_medicamento) REFERENCES medications(id) ON DELETE CASCADE
-    -- FOREIGN KEY (id_usuario) REFERENCES users(id) -- Assuming users table exists
+    FOREIGN KEY (id_medicamento) REFERENCES medications(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 3. Dose Logs (History)
