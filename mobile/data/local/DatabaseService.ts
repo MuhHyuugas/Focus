@@ -25,8 +25,8 @@ export class DatabaseService {
 
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY NOT NULL,
-        nome TEXT,
-        email TEXT,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         senha_hash TEXT,
         telefone TEXT,
         avatar TEXT,
@@ -50,6 +50,9 @@ export class DatabaseService {
         dose TEXT,
         dias TEXT,
         horarios TEXT,
+        status TEXT DEFAULT 'ativo',
+        data_inicio TEXT,
+        data_fim TEXT,
         created_at INTEGER,
         updated_at INTEGER,
         FOREIGN KEY (id_usuario) REFERENCES users (id),

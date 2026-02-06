@@ -6,18 +6,20 @@ namespace Focus.Domain.Entities
     {
         public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public string DosagemPadrao { get; set; } = string.Empty;
-        public string? Laboratorio { get; set; }
-        public string? BulaUrl { get; set; }
+        public string? DosagemPadrao { get; set; }
+        
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
-        public Medicacao(string nome, string dosagemPadrao)
+        public Medicacao(string nome, string? dosagemPadrao)
         {
             Id = Guid.NewGuid();
             Nome = nome;
             DosagemPadrao = dosagemPadrao;
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
-        // Construtor vazio para o EF Core
         protected Medicacao() { }
     }
 }

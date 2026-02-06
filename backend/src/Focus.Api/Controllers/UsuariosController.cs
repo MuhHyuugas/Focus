@@ -10,11 +10,13 @@ namespace Focus.Api.Controllers
     {
         private readonly RegistrarUsuario _registrarUsuario;
         private readonly LoginUsuario _loginUsuario;
+        private readonly Domain.Repositories.IUserRepository _userRepository;
 
-        public UsuariosController(RegistrarUsuario registrarUsuario, LoginUsuario loginUsuario)
+        public UsuariosController(RegistrarUsuario registrarUsuario, LoginUsuario loginUsuario, Domain.Repositories.IUserRepository userRepository)
         {
             _registrarUsuario = registrarUsuario;
             _loginUsuario = loginUsuario;
+            _userRepository = userRepository;
         }
 
         [HttpPost]
@@ -48,7 +50,21 @@ namespace Focus.Api.Controllers
             try
             {
                 var token = _loginUsuario.Executar(request.Email, request.Senha);
-                return Ok(new { Token = token });
+                var usuario = _userRepository.ObterPorEmail(request.Email);
+
+                return Ok(new 
+                { 
+                    Token = token,
+                    Usuario = new 
+                    {
+                        usuario!.Id,
+                        usuario.Nome,
+                        usuario.Email,
+                        usuario.Telefone,
+                        usuario.DataNascimento,
+                        usuario.Avatar
+                    }
+                });
             }
             catch (Exception ex)
             {

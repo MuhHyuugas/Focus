@@ -11,104 +11,78 @@ const CURRENT_USER_KEY = "@focus:currentUser";
 
 //classe que implementa o repositorio de autenticação
 export class AuthRepositoryImpl implements AuthRepository {
-  private db = DatabaseService.getInstance();
+  // private db = DatabaseService.getInstance(); // Removed: Online Only Mode
+
   async register(data: RegisterData): Promise<void> {
-
-    // verifica se o usuario ja existe (SQLite)
-    const existing = await this.db.executeQuery(
-      "SELECT id FROM users WHERE email = ? OR telefone = ? LIMIT 1",
-      [data.email, data.phone]
-    );
-
-    if (existing.length > 0) {
-      throw new Error("Usuário já cadastrado.");
-    }
-
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      birthDate: data.birthDate,
-      password: data.password,
-      profilePicture: null,
-    };
-
-    const now = Date.now();
-
-    // 1. Save Locally FIRST (Offline-First) - INSERT into SQLite
-    await this.db.executeQuery(
-      `INSERT INTO users (id, nome, email, senha_hash, telefone, data_nascimento, avatar, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        newUser.id,
-        newUser.name,
-        newUser.email,
-        newUser.password,
-        newUser.phone,
-        newUser.birthDate,
-        null, // avatar
-        now,
-        now
-      ]
-    );
-
-    // 2. Try Sync with Backend (Non-blocking)
     try {
+      // Format date to YYYY-MM-DD for Backend
       const [day, month, year] = data.birthDate.split("/");
       const birthDateForBackend = `${year}-${month}-${day}`;
 
       await api.post("/api/Usuarios", {
-        Nome: newUser.name,
-        Email: newUser.email,
-        Senha: newUser.password,
+        Nome: data.name,
+        Email: data.email,
+        Senha: data.password,
         DataNascimento: birthDateForBackend,
+        Telefone: data.phone // Sending phone if backend accepts it (it does in Entity)
       });
-    } catch (error) {
-      // Just log the error, don't stop the user flow
-      console.error("Error syncing user to backend (continuing in offline mode):", error);
-    }
 
-    return Promise.resolve();
+    } catch (error) {
+      console.error("Error registering user:", error);
+      throw error;
+    }
   }
 
-  // função que faz o login
   async login(id: string, password: string): Promise<User> {
-    // Busca no SQLite
-    // Suporta login por Email ou Telefone
-    const rows = await this.db.executeQuery(
-      "SELECT * FROM users WHERE (email = ? OR telefone = ?) AND senha_hash = ? LIMIT 1",
-      [id, id, password]
-    );
+    try {
+      const response = await api.post("/api/Usuarios/login", {
+        Email: id,
+        Senha: password
+      });
 
-    if (rows.length > 0) {
-      const row = rows[0];
+      // Backend returns camelCase by default: { token, usuario }
+      const token = response.data.token || response.data.Token;
+      const usuarioBackend = response.data.usuario || response.data.Usuario;
+
+      // Format Backend Date (ISO) back to DD/MM/YYYY for App
+      let formattedDate = "";
+      if (usuarioBackend.dataNascimento) {
+        const dateObj = new Date(usuarioBackend.dataNascimento);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        formattedDate = `${day}/${month}/${year}`;
+      }
+
       const user: User = {
-        id: row.id,
-        name: row.nome,
-        email: row.email,
-        phone: row.telefone,
-        birthDate: row.data_nascimento,
-        password: row.senha_hash,
-        profilePicture: row.avatar ? JSON.parse(row.avatar) : null // Avatar might interpret based on how we save
+        id: usuarioBackend.id,
+        name: usuarioBackend.nome,
+        email: usuarioBackend.email,
+        phone: usuarioBackend.telefone,
+        birthDate: formattedDate,
+        password: "", // Security: Don't store password locally
+        profilePicture: usuarioBackend.avatar
       };
 
-      // Salva sessão (AsyncStorage ainda é útil para persistir QUEM está logado)
+      // Persist Session
       await AsyncStorage.setItem(AUTH_STORAGE_KEY, "true");
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      await AsyncStorage.setItem("@focus:token", token);
+
       return user;
-    } else {
+
+    } catch (error) {
+      console.error("Login failed:", error);
       throw new Error("Credenciais inválidas");
     }
   }
 
-  // função que faz o logout
   async logout(): Promise<void> {
     await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
     await AsyncStorage.removeItem(CURRENT_USER_KEY);
+    await AsyncStorage.removeItem("@focus:token");
   }
 
-  // função que pega o usuario atual
   async getCurrentUser(): Promise<User | null> {
     try {
       const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
@@ -122,7 +96,6 @@ export class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // função que verifica se o usuario esta autenticado
   async isAuthenticated(): Promise<boolean> {
     try {
       const isAuth = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
@@ -134,48 +107,26 @@ export class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // função que salva o usuario no storage (update profile)
   async saveUser(user: User): Promise<void> {
+    // Backend Update not implemented yet.
+    // Update local session only.
     try {
-      // 1. Atualizar sessão atual
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-
-      // 2. Atualizar SQLite
-      await this.db.executeQuery(
-        `UPDATE users SET nome = ?, email = ?, senha_hash = ?, telefone = ?, data_nascimento = ?, avatar = ?, updated_at = ?
-         WHERE id = ?`,
-        [
-          user.name,
-          user.email,
-          user.password,
-          user.phone,
-          user.birthDate,
-          user.profilePicture, // assuming image uri string
-          Date.now(),
-          user.id
-        ]
-      );
-
     } catch (error) {
-      console.error("Error saving user:", error);
-      throw new Error("Erro ao salvar usuário");
+      console.error("Error saving user session:", error);
     }
   }
 
-  // função que deleta o usuario
   async deleteUser(id: string): Promise<void> {
+    // Backend Delete not implemented yet.
+    // Local Logout only.
     try {
-      // 1. Remove do SQLite
-      await this.db.executeQuery("DELETE FROM users WHERE id = ?", [id]);
-
-      // 2. Se for o usuário atual, faz logout
       const currentUser = await this.getCurrentUser();
       if (currentUser && currentUser.id === id) {
         await this.logout();
       }
     } catch (error) {
-      console.error("Error deleting user:", error);
-      throw new Error("Erro ao excluir usuário");
+      console.error("Error deleting user session:", error);
     }
   }
 }

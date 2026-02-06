@@ -15,7 +15,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<Focus.Infrastructure.Data.AppDbContext>(options =>
-    options.UseSqlite("Data Source=focus.db"));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    ));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -26,10 +29,10 @@ builder.Services.AddScoped<LoginUsuario>();
 
 builder.Services.AddScoped<IMedicacaoRepository, MedicacaoRepository>();
 builder.Services.AddScoped<ITratamentoRepository, TratamentoRepository>();
-builder.Services.AddScoped<ILembreteRepository, LembreteRepository>();
+
+
+builder.Services.AddScoped<IRegistroDiarioRepository, RegistroDiarioRepository>();
 builder.Services.AddScoped<Focus.Application.UseCases.Tratamentos.CriarTratamento>();
-builder.Services.AddScoped<Focus.Application.UseCases.Tratamentos.ObterLembretesDoUsuario>();
-builder.Services.AddScoped<Focus.Application.UseCases.Tratamentos.MarcarLembreteComoTomado>();
 
 builder.Services.AddScoped<IRegistroDiarioRepository, RegistroDiarioRepository>();
 builder.Services.AddScoped<Focus.Application.UseCases.Diario.RegistrarDiario>();

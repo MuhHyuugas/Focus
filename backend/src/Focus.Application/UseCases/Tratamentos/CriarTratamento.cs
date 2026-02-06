@@ -7,40 +7,26 @@ namespace Focus.Application.UseCases.Tratamentos
 {
     public class CriarTratamento(
         IMedicacaoRepository medicacaoRepository,
-        ITratamentoRepository tratamentoRepository,
-        ILembreteRepository lembreteRepository)
+        ITratamentoRepository tratamentoRepository)
     {
         private readonly IMedicacaoRepository _medicacaoRepository = medicacaoRepository;
         private readonly ITratamentoRepository _tratamentoRepository = tratamentoRepository;
-        private readonly ILembreteRepository _lembreteRepository = lembreteRepository;
 
-        public void Executar(string usuarioId, string nomeMedicamento, string dosagem, DateTime horarioInicio, int intervaloHoras)
+        public void Executar(string usuarioId, string nomeMedicamento, string dose, string dias, string horarios)
         {
             // 1. Verifica/Cria Medicamento
             var medicacao = _medicacaoRepository.BuscarPorNome(nomeMedicamento);
             if (medicacao == null)
             {
-                medicacao = new Medicacao(nomeMedicamento, dosagem);
+                medicacao = new Medicacao(nomeMedicamento, null); // DosagemPadrao optional
                 _medicacaoRepository.Adicionar(medicacao);
             }
 
             // 2. Cria Tratamento
-            var tratamento = new Tratamento(usuarioId, medicacao.Id, horarioInicio, dosagem, intervaloHoras);
+            var tratamento = new Tratamento(usuarioId, medicacao.Id, dose, dias, horarios);
             _tratamentoRepository.Adicionar(tratamento);
 
-            // 3. Gera Lembretes para 7 dias
-            var dataAtual = horarioInicio;
-            var dataLimite = horarioInicio.AddDays(7);
-            var lembretes = new List<Lembrete>();
-
-            while (dataAtual < dataLimite)
-            {
-                var lembrete = new Lembrete(tratamento.Id, dataAtual);
-                lembretes.Add(lembrete);
-                dataAtual = dataAtual.AddHours(intervaloHoras);
-            }
-
-            _lembreteRepository.AdicionarRange(lembretes);
+            // 3. (Removido) Lembretes são gerenciados localmente pelo App Mobile
         }
     }
 }

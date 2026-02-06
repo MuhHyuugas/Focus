@@ -7,13 +7,9 @@ namespace Focus.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class TratamentosController(
-        CriarTratamento criarTratamento,
-        ObterLembretesDoUsuario obterLembretesDoUsuario,
-        MarcarLembreteComoTomado marcarLembreteComoTomado) : ControllerBase
+        CriarTratamento criarTratamento) : ControllerBase
     {
         private readonly CriarTratamento _criarTratamento = criarTratamento;
-        private readonly ObterLembretesDoUsuario _obterLembretesDoUsuario = obterLembretesDoUsuario;
-        private readonly MarcarLembreteComoTomado _marcarLembreteComoTomado = marcarLembreteComoTomado;
 
         [HttpPost]
         public IActionResult Criar([FromBody] CriarTratamentoRequest request)
@@ -24,8 +20,8 @@ namespace Focus.Api.Controllers
                     request.UsuarioId,
                     request.NomeMedicamento,
                     request.Dosagem,
-                    request.HorarioInicio,
-                    request.IntervaloHoras
+                    request.Dias,
+                    request.Horarios
                 );
 
                 return Created(string.Empty, new { Message = "Tratamento criado com sucesso." });
@@ -36,40 +32,15 @@ namespace Focus.Api.Controllers
             }
         }
 
-        [HttpGet("lembretes")]
-        public IActionResult ObterLembretes([FromQuery] string usuarioId, [FromQuery] DateTime? data = null)
-        {
-            try
-            {
-                var lembretes = _obterLembretesDoUsuario.Executar(usuarioId, data);
-                return Ok(lembretes);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
-        }
+        // ... methods ...
 
-        [HttpPut("lembretes/{id}/tomar")]
-        public IActionResult MarcarComoTomado(Guid id)
-        {
-            try
-            {
-                _marcarLembreteComoTomado.Executar(id);
-                return Ok(new { Message = "Lembrete marcado como tomado." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
-        }
     }
 
     public record CriarTratamentoRequest(
         string UsuarioId,
         string NomeMedicamento,
         string Dosagem,
-        DateTime HorarioInicio,
-        int IntervaloHoras
+        string Dias,
+        string Horarios
     );
 }

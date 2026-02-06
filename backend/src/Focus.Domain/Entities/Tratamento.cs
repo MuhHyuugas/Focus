@@ -6,36 +6,40 @@ namespace Focus.Domain.Entities
     public class Tratamento
     {
         public Guid Id { get; set; }
-        public string UsuarioId { get; set; } // FK para UsuarioTDAH (string)
+        
+        // Mapped to id_usuario
+        public string UsuarioId { get; set; } 
         public UsuarioTDAH Usuario { get; set; } = null!;
 
-        public Guid MedicacaoId { get; set; } // FK para Medicacao (Guid)
+        // Mapped to id_medicamento
+        public Guid MedicacaoId { get; set; }
         public Medicacao Medicacao { get; set; } = null!;
 
-        public DateTime DataInicio { get; set; }
+        public string? Dose { get; set; } // was DosagemPersonalizada
+        public string? Dias { get; set; } // JSON
+        public string? Horarios { get; set; } // JSON
+        public string Status { get; set; } = "ativo";
+        
+        public DateTime? DataInicio { get; set; }
         public DateTime? DataFim { get; set; }
-        public string DosagemPersonalizada { get; set; } = string.Empty;
-        public int IntervaloHoras { get; set; }
-        public StatusTratamento Status { get; set; }
+        
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
-        public Tratamento(string usuarioId, Guid medicacaoId, DateTime dataInicio, string dosagemPersonalizada, int intervaloHoras)
+        public Tratamento(string usuarioId, Guid medicacaoId, string? dose, string? dias, string? horarios)
         {
             Id = Guid.NewGuid();
             UsuarioId = usuarioId;
             MedicacaoId = medicacaoId;
-            DataInicio = dataInicio;
-            DosagemPersonalizada = dosagemPersonalizada;
-            IntervaloHoras = intervaloHoras;
-            Status = StatusTratamento.Ativo;
+            Dose = dose;
+            Dias = dias;
+            Horarios = horarios;
+            Status = "ativo";
+            DataInicio = DateTime.UtcNow;
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
-        // Construtor vazio para o EF Core
         protected Tratamento() { }
-
-        public void Finalizar(DateTime dataFim)
-        {
-            DataFim = dataFim;
-            Status = StatusTratamento.Finalizado;
-        }
     }
 }

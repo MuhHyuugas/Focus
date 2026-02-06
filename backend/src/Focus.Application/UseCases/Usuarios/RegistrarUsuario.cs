@@ -24,7 +24,11 @@ namespace Focus.Application.UseCases.Usuarios
 
             var passwordHash = _passwordHasher.Hash(senha);
 
-            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email, passwordHash, dataNascimento);
+            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email)
+            {
+                SenhaHash = passwordHash,
+                DataNascimento = dataNascimento
+            };
 
 
             _repository.Adicionar(usuario);
