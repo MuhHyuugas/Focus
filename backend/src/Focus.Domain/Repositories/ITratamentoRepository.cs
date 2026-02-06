@@ -7,6 +7,6 @@ namespace Focus.Domain.Repositories
     {
         void Adicionar(Tratamento tratamento);
         // Usaremos este método mais pra frente para listar, mas já deixamos a interface pronta
-        List<Tratamento> BuscarPorUsuario(string usuarioId);
+        List<Tratamento> BuscarPorUsuario(Guid usuarioId);
     }
 }

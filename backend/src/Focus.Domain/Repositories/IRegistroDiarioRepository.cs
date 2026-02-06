@@ -8,7 +8,7 @@ namespace Focus.Domain.Repositories
     {
         void Adicionar(RegistroDiario registro);
         void Atualizar(RegistroDiario registro);
-        RegistroDiario? BuscarPorUsuarioEData(string usuarioId, DateTime data);
-        List<RegistroDiario> BuscarHistorico(string usuarioId, int dias);
+        RegistroDiario? BuscarPorUsuarioEData(Guid usuarioId, DateTime data);
+        List<RegistroDiario> BuscarHistorico(Guid usuarioId, int dias);
     }
 }

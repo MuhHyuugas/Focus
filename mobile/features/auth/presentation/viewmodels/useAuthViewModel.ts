@@ -103,6 +103,7 @@ export function useAuthViewModel() {
     setError(null);
 
     try {
+      // 1. Tentar Registrar
       await registerUseCase.execute({
         name: data.name ?? "",
         email: data.email ?? "",
@@ -111,13 +112,24 @@ export function useAuthViewModel() {
         birthDate: data.birthDate ?? "",
       });
 
-      // faz o login automático após o cadastro
+    } catch (err: any) {
+      setError(err.message || "Erro ao cadastrar");
+      setIsLoading(false);
+      return; // Para aqui se o cadastro falhar
+    }
+
+    // 2. Tentar Auto-Login (Se falhar, redireciona para login manual)
+    try {
       await authRepository.login(data.email, data.password);
       await checkAuthState();
       router.replace("/(tabs)/dashboard");
       resetSignUpForm();
     } catch (err: any) {
-      setError(err.message || "Erro ao cadastrar");
+      console.log("Auto-login failed after register:", err);
+      // Sucesso no cadastro, mas falha no login automático
+      setActiveTab("entrar");
+      setError("Cadastro realizado com sucesso! Faça login para continuar.");
+      resetSignUpForm();
     } finally {
       setIsLoading(false);
     }

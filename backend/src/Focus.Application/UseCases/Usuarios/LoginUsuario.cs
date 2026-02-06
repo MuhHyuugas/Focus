@@ -18,18 +18,25 @@ namespace Focus.Application.UseCases.Usuarios
 
         public string Executar(string email, string senha)
         {
+            Console.WriteLine($"[Login Debug] Attempting login for: {email}");
             var usuario = _repository.ObterPorEmail(email);
 
             if (usuario == null)
             {
+                Console.WriteLine("[Login Debug] User NOT found in database.");
                 throw new Exception("Email ou senha inválidos");
             }
+            
+            Console.WriteLine($"[Login Debug] User found. Id: {usuario.Id}");
+            Console.WriteLine($"[Login Debug] Stored Hash Length: {usuario.SenhaHash?.Length ?? 0}");
 
             var passwordValido = _passwordHasher.Verify(senha, usuario.SenhaHash);
+            
+            Console.WriteLine($"[Login Debug] Password Verify Result: {passwordValido}");
 
             if (!passwordValido)
             {
-                throw new Exception("Email ou senha inválidos");
+                 throw new Exception("Email ou senha inválidos");
             }
 
             return _tokenGenerator.Generate(usuario);

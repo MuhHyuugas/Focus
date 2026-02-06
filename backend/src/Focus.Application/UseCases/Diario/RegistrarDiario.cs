@@ -11,8 +11,11 @@ namespace Focus.Application.UseCases.Diario
 
         public void Executar(string usuarioId, Humor humor, int nivelFoco, bool ansiedade, string? observacoes)
         {
+            if (!Guid.TryParse(usuarioId, out var usuarioGuid))
+                throw new ArgumentException("ID do usuário inválido");
+
             var hoje = DateTime.Today;
-            var registroExistente = _repository.BuscarPorUsuarioEData(usuarioId, hoje);
+            var registroExistente = _repository.BuscarPorUsuarioEData(usuarioGuid, hoje);
 
             if (registroExistente != null)
             {
@@ -21,7 +24,7 @@ namespace Focus.Application.UseCases.Diario
             }
             else
             {
-                var novoRegistro = new RegistroDiario(usuarioId, hoje, humor, nivelFoco, ansiedade, observacoes);
+                var novoRegistro = new RegistroDiario(usuarioGuid, hoje, humor, nivelFoco, ansiedade, observacoes);
                 _repository.Adicionar(novoRegistro);
             }
         }

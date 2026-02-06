@@ -10,10 +10,13 @@ namespace Focus.Application.UseCases.Diario
 
         public List<RegistroDiario> Executar(string usuarioId, int dias)
         {
+            if (!Guid.TryParse(usuarioId, out var usuarioGuid))
+                throw new ArgumentException("ID do usuário inválido");
+
             // Se dias for 0 ou negativo, assumimos um padrão (ex: 30 dias)
             if (dias <= 0) dias = 30;
 
-            return _repository.BuscarHistorico(usuarioId, dias);
+            return _repository.BuscarHistorico(usuarioGuid, dias);
         }
     }
 }

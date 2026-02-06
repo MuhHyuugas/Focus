@@ -6,7 +6,7 @@ namespace Focus.Domain.Entities
     public class RegistroDiario
     {
         public Guid Id { get; set; }
-        public string UsuarioId { get; set; }
+        public Guid UsuarioId { get; set; }
         public UsuarioTDAH Usuario { get; set; } = null!;
         public DateTime Data { get; set; }
         public Humor Humor { get; set; }
@@ -14,7 +14,7 @@ namespace Focus.Domain.Entities
         public bool Ansiedade { get; set; }
         public string? Observacoes { get; set; }
 
-        public RegistroDiario(string usuarioId, DateTime data, Humor humor, int nivelFoco, bool ansiedade, string? observacoes)
+        public RegistroDiario(Guid usuarioId, DateTime data, Humor humor, int nivelFoco, bool ansiedade, string? observacoes)
         {
             Id = Guid.NewGuid();
             UsuarioId = usuarioId;

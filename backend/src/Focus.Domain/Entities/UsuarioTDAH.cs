@@ -5,7 +5,7 @@ namespace Focus.Domain.Entities
     // O construtor primário obriga quem criar o usuário a preencher tudo
     public class UsuarioTDAH
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? SenhaHash { get; set; }
@@ -16,7 +16,7 @@ namespace Focus.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public UsuarioTDAH(string id, string nome, string email)
+        public UsuarioTDAH(Guid id, string nome, string email)
         {
             Id = id;
             Nome = nome;

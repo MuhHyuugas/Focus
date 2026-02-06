@@ -11,7 +11,7 @@ namespace Focus.Application.UseCases.Usuarios
         private readonly IPasswordHasher _passwordHasher = passwordHasher;
 
 
-        public UsuarioTDAH Executar(string nome, string email, string senha, DateTime dataNascimento)
+        public UsuarioTDAH Executar(string nome, string email, string senha, DateTime dataNascimento, string? telefone = null)
         {
 
             var emailJaExiste = _repository.ExisteEmail(email);
@@ -24,10 +24,11 @@ namespace Focus.Application.UseCases.Usuarios
 
             var passwordHash = _passwordHasher.Hash(senha);
 
-            var usuario = new UsuarioTDAH(Guid.NewGuid().ToString(), nome, email)
+            var usuario = new UsuarioTDAH(Guid.NewGuid(), nome, email)
             {
                 SenhaHash = passwordHash,
-                DataNascimento = dataNascimento
+                DataNascimento = dataNascimento,
+                Telefone = telefone
             };
 
 

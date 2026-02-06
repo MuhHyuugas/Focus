@@ -8,7 +8,7 @@ namespace Focus.Domain.Entities
         public Guid Id { get; set; }
         
         // Mapped to id_usuario
-        public string UsuarioId { get; set; } 
+        public Guid UsuarioId { get; set; } 
         public UsuarioTDAH Usuario { get; set; } = null!;
 
         // Mapped to id_medicamento
@@ -26,7 +26,7 @@ namespace Focus.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public Tratamento(string usuarioId, Guid medicacaoId, string? dose, string? dias, string? horarios)
+        public Tratamento(Guid usuarioId, Guid medicacaoId, string? dose, string? dias, string? horarios)
         {
             Id = Guid.NewGuid();
             UsuarioId = usuarioId;

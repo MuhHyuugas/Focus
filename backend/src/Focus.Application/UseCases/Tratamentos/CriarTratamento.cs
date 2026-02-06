@@ -23,7 +23,12 @@ namespace Focus.Application.UseCases.Tratamentos
             }
 
             // 2. Cria Tratamento
-            var tratamento = new Tratamento(usuarioId, medicacao.Id, dose, dias, horarios);
+            if (!Guid.TryParse(usuarioId, out var usuarioGuid))
+            {
+                throw new ArgumentException("ID do usuário inválido");
+            }
+
+            var tratamento = new Tratamento(usuarioGuid, medicacao.Id, dose, dias, horarios);
             _tratamentoRepository.Adicionar(tratamento);
 
             // 3. (Removido) Lembretes são gerenciados localmente pelo App Mobile

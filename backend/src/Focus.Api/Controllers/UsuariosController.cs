@@ -24,7 +24,7 @@ namespace Focus.Api.Controllers
         {
             try
             {
-                var usuario = _registrarUsuario.Executar(request.Nome, request.Email, request.Senha, request.DataNascimento);
+                var usuario = _registrarUsuario.Executar(request.Nome, request.Email, request.Senha, request.DataNascimento, request.Telefone);
 
                 return Created(string.Empty, new
                 {
@@ -73,6 +73,6 @@ namespace Focus.Api.Controllers
         }
     }
 
-    public record RegistroRequest(string Nome, string Email, string Senha, DateTime DataNascimento);
+    public record RegistroRequest(string Nome, string Email, string Senha, DateTime DataNascimento, string? Telefone);
     public record LoginRequest(string Email, string Senha);
 }

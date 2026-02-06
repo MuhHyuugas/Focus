@@ -24,13 +24,13 @@ namespace Focus.Infrastructure.Repositories
             _context.SaveChanges();
         }
 
-        public RegistroDiario? BuscarPorUsuarioEData(string usuarioId, DateTime data)
+        public RegistroDiario? BuscarPorUsuarioEData(Guid usuarioId, DateTime data)
         {
             return _context.Diarios
                 .FirstOrDefault(r => r.UsuarioId == usuarioId && r.Data.Date == data.Date);
         }
 
-        public List<RegistroDiario> BuscarHistorico(string usuarioId, int dias)
+        public List<RegistroDiario> BuscarHistorico(Guid usuarioId, int dias)
         {
             var dataInicio = DateTime.Today.AddDays(-dias);
             return _context.Diarios

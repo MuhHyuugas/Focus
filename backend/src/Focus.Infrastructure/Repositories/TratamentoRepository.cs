@@ -22,7 +22,7 @@ namespace Focus.Infrastructure.Repositories
             _context.SaveChanges();
         }
 
-        public List<Tratamento> BuscarPorUsuario(string usuarioId)
+        public List<Tratamento> BuscarPorUsuario(Guid usuarioId)
         {
             return _context.Tratamentos
                 .Include(t => t.Medicacao)
