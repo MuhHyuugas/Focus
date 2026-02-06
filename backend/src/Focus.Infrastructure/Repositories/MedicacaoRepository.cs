@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Focus.Domain.Entities;
 using Focus.Domain.Repositories;
@@ -18,6 +19,11 @@ namespace Focus.Infrastructure.Repositories
         public Medicacao? BuscarPorNome(string nome)
         {
             return _context.Medicacoes.FirstOrDefault(m => m.Nome.ToLower() == nome.ToLower());
+        }
+
+        public IEnumerable<Medicacao> ListarTodos()
+        {
+            return _context.Medicacoes.ToList();
         }
     }
 }

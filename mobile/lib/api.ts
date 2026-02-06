@@ -1,13 +1,18 @@
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: process.env.EXPO_PUBLIC_API_URL || "http://52.54.148.4",
 });
 
-console.log("🔌 API Configured URL:", process.env.EXPO_PUBLIC_API_URL);
+console.log("🔌 API Configured URL:", api.defaults.baseURL);
 
 // Interceptor para logs de requisição
-api.interceptors.request.use((request) => {
+api.interceptors.request.use(async (request) => {
+  const token = await AsyncStorage.getItem("@focus:token");
+  if (token) {
+    request.headers.Authorization = `Bearer ${token}`;
+  }
   console.log("Starting Request", JSON.stringify(request, null, 2));
   return request;
 });

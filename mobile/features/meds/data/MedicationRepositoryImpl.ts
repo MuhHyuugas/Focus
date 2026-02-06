@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 import api from "@/lib/api";
 
-const CURRENT_USER_KEY = "currentUser";
+const CURRENT_USER_KEY = "@focus:currentUser";
 
 export class MedicationRepositoryImpl implements MedicationRepository {
   private db = DatabaseService.getInstance();
@@ -22,18 +22,18 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           // Check if exists
           const existing = await this.db.executeQuery(
             "SELECT id FROM medications WHERE id = ?",
-            [med.id]
+            [med.id],
           );
 
           if (existing.length > 0) {
             await this.db.executeQuery(
               "UPDATE medications SET nome = ?, dosagem_padrao = ?, updated_at = ? WHERE id = ?",
-              [med.nome, med.dosagemPadrao, Date.now(), med.id]
+              [med.nome, med.dosagemPadrao, Date.now(), med.id],
             );
           } else {
             await this.db.executeQuery(
               "INSERT INTO medications (id, nome, dosagem_padrao, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-              [med.id, med.nome, med.dosagemPadrao, Date.now(), Date.now()]
+              [med.id, med.nome, med.dosagemPadrao, Date.now(), Date.now()],
             );
           }
         }
@@ -42,7 +42,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     } catch (e) {
       console.error(
         "MedicationRepository: Error syncing catalog (Offline?)",
-        e
+        e,
       );
     }
   }
@@ -58,7 +58,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       if (medication.id) {
         const check = await this.db.executeQuery(
           "SELECT id FROM medications WHERE id = ?",
-          [medication.id]
+          [medication.id],
         );
         if (check.length > 0) medId = medication.id;
       }
@@ -67,7 +67,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       if (!medId) {
         const existingMeds = await this.db.executeQuery(
           "SELECT id FROM medications WHERE nome = ? LIMIT 1",
-          [medication.name]
+          [medication.name],
         );
 
         if (existingMeds.length > 0) {
@@ -76,7 +76,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           medId = Crypto.randomUUID();
           await this.db.executeQuery(
             "INSERT INTO medications (id, nome, dosagem_padrao, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-            [medId, medication.name, medication.dosage || null, now, now]
+            [medId, medication.name, medication.dosage || null, now, now],
           );
         }
       }
@@ -84,7 +84,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       // 2. Save/Update Treatment (Local SQLite)
       const existingTreatment = await this.db.executeQuery(
         "SELECT id FROM treatments WHERE id = ? OR (id_usuario = ? AND id_medicamento = ?)",
-        [medication.id, userId, medId] // Check by ID or Composite Key
+        [medication.id, userId, medId], // Check by ID or Composite Key
       );
 
       const daysJson = JSON.stringify(medication.days);
@@ -104,7 +104,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             medication.dosage || null,
             now,
             treatmentId,
-          ]
+          ],
         );
       } else {
         treatmentId = treatmentId || Crypto.randomUUID();
@@ -120,14 +120,17 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             medication.dosage || null,
             now,
             now,
-          ]
+          ],
         );
       }
 
       // 3. Sync with Backend (Non-blocking)
-      this._syncTreatmentToBackend(userId, medId, treatmentId, medication).catch(
-        (err) => console.error("Background sync failed:", err)
-      );
+      this._syncTreatmentToBackend(
+        userId,
+        medId,
+        treatmentId,
+        medication,
+      ).catch((err) => console.error("Background sync failed:", err));
     } catch (e) {
       console.error("Error saving medication to SQLite", e);
       throw new Error("Failed to save medication");
@@ -138,18 +141,15 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     userId: string,
     medId: string,
     treatmentId: string,
-    med: Medication
+    med: Medication,
   ) {
-    if (userId === "guest") return;
-
     console.log("Syncing treatment to backend...");
     await api.post("/api/tratamentos", {
-      id: treatmentId,
-      usuarioId: userId,
-      medicamentoId: medId,
-      dose: med.dosage,
-      dias: med.days,
-      horarios: med.times,
+      UsuarioId: userId,
+      NomeMedicamento: med.name,
+      Dosagem: med.dosage,
+      Dias: JSON.stringify(med.days),
+      Horarios: JSON.stringify(med.times),
     });
     console.log("Treatment synced successfully.");
   }
@@ -158,17 +158,15 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     try {
       const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
       if (!userJson) {
-        console.log(
-          "MedicationRepository: No user found in storage, defaulting to guest"
-        );
-        return "guest";
+        console.error("MedicationRepository: No user found in storage");
+        throw new Error("Usuário não autenticado");
       }
       const user = JSON.parse(userJson);
       console.log(`MedicationRepository: Current user ID: ${user.id}`);
       return String(user.id);
     } catch (e) {
       console.error("Error getting user ID", e);
-      return "guest";
+      throw new Error("Falha ao obter ID do usuário");
     }
   }
 
@@ -216,9 +214,10 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   async clearAll(): Promise<void> {
     try {
       const userId = await this._getUserId();
-      await this.db.executeQuery("DELETE FROM treatments WHERE id_usuario = ?", [
-        userId,
-      ]);
+      await this.db.executeQuery(
+        "DELETE FROM treatments WHERE id_usuario = ?",
+        [userId],
+      );
     } catch (e) {
       console.error("Error clearing medications from SQLite", e);
     }
@@ -233,7 +232,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     mood?: number,
     anxiety?: boolean,
     focus?: number,
-    notes?: string
+    notes?: string,
   ): Promise<void> {
     try {
       const now = Date.now();
@@ -259,7 +258,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           notes ?? null,
           now,
           now,
-        ]
+        ],
       );
     } catch (e) {
       console.error("Error marking dose taken in SQLite", e);
@@ -346,16 +345,37 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   }
 
   async searchCatalog(
-    query: string
+    query: string,
   ): Promise<{ id: string; name: string; defaultDosage: string }[]> {
     try {
-      const sql = `SELECT id, nome as name, dosagem_padrao as defaultDosage FROM medications WHERE nome LIKE ? LIMIT 20`;
-      const rows = await this.db.executeQuery(sql, [`%${query}%`]);
-      return rows.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        defaultDosage: r.defaultDosage,
-      }));
+      // 1. Try Backend Search
+      try {
+        const response = await api.get(`/api/medicacoes`);
+        const allMeds = response.data;
+        // Client-side filtering since backend doesn't support search param yet
+        return allMeds
+          .filter((m: any) =>
+            m.nome.toLowerCase().includes(query.toLowerCase()),
+          )
+          .map((m: any) => ({
+            id: m.id,
+            name: m.nome,
+            defaultDosage: m.dosagemPadrao,
+          }));
+      } catch (backendError) {
+        console.warn(
+          "Backend search failed, checking local cache...",
+          backendError,
+        );
+        // 2. Fallback to Local SQLite
+        const sql = `SELECT id, nome as name, dosagem_padrao as defaultDosage FROM medications WHERE nome LIKE ? LIMIT 20`;
+        const rows = await this.db.executeQuery(sql, [`%${query}%`]);
+        return rows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          defaultDosage: r.defaultDosage,
+        }));
+      }
     } catch (e) {
       console.error("Error searching catalog", e);
       return [];

@@ -7,12 +7,14 @@ export class NotificationRepositoryImpl {
   private async _getUserId(): Promise<string> {
     try {
       const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
-      if (!userJson) return "guest";
+      if (!userJson) {
+        throw new Error("User not authenticated");
+      }
       const user = JSON.parse(userJson);
       return user.id;
     } catch (e) {
       console.error("Error getting user ID", e);
-      return "guest";
+      throw new Error("Failed to get user ID");
     }
   }
 

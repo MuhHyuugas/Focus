@@ -5,17 +5,14 @@ import { AuthRepository } from "../domain/repositories/AuthRepository";
 import api from "@/lib/api";
 import { DatabaseService } from "@/data/local/DatabaseService";
 
-const USER_STORAGE_KEY = "@focus:key_users";
 const AUTH_STORAGE_KEY = "@focus:isAuthenticated";
 const CURRENT_USER_KEY = "@focus:currentUser";
 
 //classe que implementa o repositorio de autenticação
 export class AuthRepositoryImpl implements AuthRepository {
-  // private db = DatabaseService.getInstance(); // Removed: Online Only Mode
-
   async register(data: RegisterData): Promise<void> {
     try {
-      // Format date to YYYY-MM-DD for Backend
+      // Formata data para o padrão do backend
       const [day, month, year] = data.birthDate.split("/");
       const birthDateForBackend = `${year}-${month}-${day}`;
 
@@ -24,9 +21,8 @@ export class AuthRepositoryImpl implements AuthRepository {
         Email: data.email,
         Senha: data.password,
         DataNascimento: birthDateForBackend,
-        Telefone: data.phone // Sending phone if backend accepts it (it does in Entity)
+        Telefone: data.phone,
       });
-
     } catch (error) {
       console.error("Error registering user:", error);
       throw error;
@@ -37,7 +33,7 @@ export class AuthRepositoryImpl implements AuthRepository {
     try {
       const response = await api.post("/api/Usuarios/login", {
         Email: id,
-        Senha: password
+        Senha: password,
       });
 
       // Backend returns camelCase by default: { token, usuario }
@@ -48,8 +44,8 @@ export class AuthRepositoryImpl implements AuthRepository {
       let formattedDate = "";
       if (usuarioBackend.dataNascimento) {
         const dateObj = new Date(usuarioBackend.dataNascimento);
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
         const year = dateObj.getFullYear();
         formattedDate = `${day}/${month}/${year}`;
       }
@@ -61,7 +57,7 @@ export class AuthRepositoryImpl implements AuthRepository {
         phone: usuarioBackend.telefone,
         birthDate: formattedDate,
         password: "", // Security: Don't store password locally
-        profilePicture: usuarioBackend.avatar
+        profilePicture: usuarioBackend.avatar,
       };
 
       // Persist Session
@@ -69,8 +65,29 @@ export class AuthRepositoryImpl implements AuthRepository {
       await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
       await AsyncStorage.setItem("@focus:token", token);
 
-      return user;
+      // Synchonize with Local SQLite for offline support
+      try {
+        const db = DatabaseService.getInstance();
+        const existing = await db.executeQuery(
+          "SELECT id FROM users WHERE id = ?",
+          [user.id],
+        );
+        if (existing.length > 0) {
+          await db.executeQuery(
+            "UPDATE users SET nome = ?, email = ?, updated_at = ? WHERE id = ?",
+            [user.name, user.email, Date.now(), user.id],
+          );
+        } else {
+          await db.executeQuery(
+            "INSERT INTO users (id, nome, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            [user.id, user.name, user.email, Date.now(), Date.now()],
+          );
+        }
+      } catch (dbError) {
+        console.error("Failed to sync user to local DB", dbError);
+      }
 
+      return user;
     } catch (error) {
       console.error("Login failed:", error);
       throw new Error("Credenciais inválidas");
