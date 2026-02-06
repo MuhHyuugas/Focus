@@ -1,9 +1,10 @@
-import { images } from "@/assets/assets";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Text } from "@/components/ui/text";
-import { useAuthStateViewModel } from "@/features/auth/presentation/viewmodels/useAuthStateViewModel";
 import { Link } from "expo-router";
 import { TouchableOpacity } from "react-native";
+
+import { Text } from "@/components/ui/text";
+import { images } from "@/assets/assets";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuthStateViewModel } from "@/features/auth/presentation/viewmodels/useAuthStateViewModel";
 
 interface ProfileAvatarProps {
   className?: string;
@@ -11,12 +12,17 @@ interface ProfileAvatarProps {
   withLink?: boolean;
 }
 
-export function ProfileAvatar({
+/**
+ * Componente de avatar do usuário com integração ao estado de autenticação.
+ * Exibe a foto de perfil ou um fallback padrão.
+ */
+export const ProfileAvatar = ({
   className,
   fallbackText = "",
   withLink = true,
-}: ProfileAvatarProps) {
+}: ProfileAvatarProps) => {
   const { user } = useAuthStateViewModel();
+
 
   const imageSource = user?.profilePicture
     ? typeof user.profilePicture === "string"
@@ -42,4 +48,5 @@ export function ProfileAvatar({
   }
 
   return AvatarComponent;
-}
+};
+

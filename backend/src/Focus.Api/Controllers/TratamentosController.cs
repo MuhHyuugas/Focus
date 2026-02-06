@@ -1,16 +1,30 @@
-using System;
 using Focus.Application.UseCases.Tratamentos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Focus.Api.Controllers
 {
+    /// <summary>
+    /// Controller responsável pela gestão de tratamentos (prescrições).
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class TratamentosController(
-        CriarTratamento criarTratamento) : ControllerBase
+    public class TratamentosController : ControllerBase
     {
-        private readonly CriarTratamento _criarTratamento = criarTratamento;
+        private readonly CriarTratamento _criarTratamento;
 
+        /// <summary>
+        /// Inicializa uma nova instância de <see cref="TratamentosController"/>.
+        /// </summary>
+        public TratamentosController(CriarTratamento criarTratamento)
+        {
+            _criarTratamento = criarTratamento;
+        }
+
+        /// <summary>
+        /// Cria um novo registro de tratamento para um usuário.
+        /// </summary>
+        /// <param name="request">Dados do tratamento e horários.</param>
+        /// <returns>Mensagem de sucesso ou erro.</returns>
         [HttpPost]
         public IActionResult Criar([FromBody] CriarTratamentoRequest request)
         {
@@ -31,10 +45,8 @@ namespace Focus.Api.Controllers
                 return BadRequest(new { Error = ex.Message });
             }
         }
-
-        // ... methods ...
-
     }
+
 
     public record CriarTratamentoRequest(
         string UsuarioId,
@@ -44,3 +56,4 @@ namespace Focus.Api.Controllers
         string Horarios
     );
 }
+

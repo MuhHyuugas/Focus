@@ -55,8 +55,8 @@ namespace Focus.Infrastructure.Data
                 entity.Property(e => e.UsuarioId).HasColumnName("id_usuario").IsRequired();
                 entity.Property(e => e.MedicacaoId).HasColumnName("id_medicamento").IsRequired();
                 entity.Property(e => e.Dose).HasColumnName("dose");
-                entity.Property(e => e.Dias).HasColumnName("dias"); // JSON
-                entity.Property(e => e.Horarios).HasColumnName("horarios"); // JSON
+                entity.Property(e => e.Dias).HasColumnName("dias");
+                entity.Property(e => e.Horarios).HasColumnName("horarios");
                 entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue("ativo");
                 entity.Property(e => e.DataInicio).HasColumnName("data_inicio");
                 entity.Property(e => e.DataFim).HasColumnName("data_fim");
@@ -74,8 +74,6 @@ namespace Focus.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-
-
             modelBuilder.Entity<RegistroDiario>(entity =>
             {
                 entity.ToTable("daily_records");
@@ -87,3 +85,4 @@ namespace Focus.Infrastructure.Data
         }
     }
 }
+

@@ -4,19 +4,35 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Focus.Api.Controllers
 {
+    /// <summary>
+    /// Controller responsável pela listagem do catálogo de medicações.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Requires valid JWT
-    public class MedicacoesController(ListarMedicacoes listarMedicacoes) : ControllerBase
+    [Authorize]
+    public class MedicacoesController : ControllerBase
     {
-        private readonly ListarMedicacoes _listarMedicacoes = listarMedicacoes;
+        private readonly ListarMedicacoes _listarMedicacoes;
 
+        /// <summary>
+        /// Inicializa uma nova instância de <see cref="MedicacoesController"/>.
+        /// </summary>
+        public MedicacoesController(ListarMedicacoes listarMedicacoes)
+        {
+            _listarMedicacoes = listarMedicacoes;
+        }
+
+        /// <summary>
+        /// Obtém a lista completa de medicações disponíveis no catálogo.
+        /// </summary>
+        /// <returns>Lista de medicações para sincronização com o mobile.</returns>
         [HttpGet]
         public IActionResult Listar()
         {
-            // Simple GET to sync catalog
             var medicacoes = _listarMedicacoes.Executar();
             return Ok(medicacoes);
         }
     }
+
 }
+

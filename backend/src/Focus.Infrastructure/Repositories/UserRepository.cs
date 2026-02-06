@@ -1,7 +1,6 @@
 using Focus.Domain.Entities;
 using Focus.Domain.Repositories;
 using Focus.Infrastructure.Data;
-using System.Linq;
 
 namespace Focus.Infrastructure.Repositories
 {

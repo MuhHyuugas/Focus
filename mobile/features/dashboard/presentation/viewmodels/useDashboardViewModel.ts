@@ -1,29 +1,37 @@
-import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
-import { useAuthContext } from "@/features/auth/presentation/contexts/AuthContext";
-import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
-import { Medication } from "@/features/meds/domain/entities/Medication";
-import { useFocusEffect } from "expo-router";
-import { NotificationRepositoryImpl } from "@/features/notifications/data/NotificationRepositoryImpl";
 import { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
+
+import { Medication } from "@/features/meds/domain/entities/Medication";
+import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
+import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
+import { NotificationRepositoryImpl } from "@/features/notifications/data/NotificationRepositoryImpl";
+import { useAuthContext } from "@/features/auth/presentation/contexts/AuthContext";
 
 const repository = new MedicationRepositoryImpl();
 const sideEffectRepository = new SideEffectRepositoryImpl();
 const notificationRepository = new NotificationRepositoryImpl();
 
+/**
+ * ViewModel responsável pela lógica do Dashboard.
+ * Gerencia o estado das medicações, estatísticas do usuário e notificações.
+ */
 export const useDashboardViewModel = () => {
   const { user } = useAuthContext();
+
   const [hasMedications, setHasMedications] = useState(false);
   const [greeting, setGreeting] = useState("");
   const [nextMedication, setNextMedication] = useState<Medication | null>(null);
   const [nextMedicationTime, setNextMedicationTime] = useState("");
   const [timeUntilNext, setTimeUntilNext] = useState("");
-
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   // Stats States
   const [streakDays, setStreakDays] = useState(0);
   const [topSideEffect, setTopSideEffect] = useState("");
 
+  /**
+   * Verifica se existem notificações não lidas.
+   */
   const checkNotifications = useCallback(async () => {
     try {
       const notifications = await notificationRepository.getNotifications();
@@ -34,6 +42,9 @@ export const useDashboardViewModel = () => {
     }
   }, []);
 
+  /**
+   * Define a saudação baseada no horário local.
+   */
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return "Bom dia";
@@ -41,6 +52,9 @@ export const useDashboardViewModel = () => {
     return "Boa noite";
   };
 
+  /**
+   * Calcula as estatísticas de uso (streak e efeitos colaterais comuns).
+   */
   const calculateStats = async (meds: Medication[]) => {
     try {
       const allTaken = await repository.getAllTakenDoses();
@@ -90,73 +104,68 @@ export const useDashboardViewModel = () => {
     }
   };
 
-  const checkMedications = useCallback(async () => {
-    const meds = await repository.getMedications();
-    setHasMedications(meds.length > 0);
+  /**
+   * Atualiza todos os dados do dashboard (medicações, notificações e estatísticas).
+   */
+  const refreshDashboardData = useCallback(async () => {
+    const treatments = await repository.getMedications();
+    setHasMedications(treatments.length > 0);
     await checkNotifications();
-    await calculateStats(meds);
+    await calculateStats(treatments);
 
     const now = new Date();
-    const todayDate = now.toISOString().split("T")[0];
-    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now
+    const todayISO = now.toISOString().split("T")[0];
+    const currentClockTime = `${now.getHours().toString().padStart(2, "0")}:${now
       .getMinutes()
       .toString()
       .padStart(2, "0")}`;
 
-    const takenDoses = await repository.getTakenDoses(todayDate);
-    const daySlugs = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+    const takenDosesToday = await repository.getTakenDoses(todayISO);
+    const weekDaySlugs = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
 
-    // Helper to find next dose
-    let foundNext: { med: Medication; time: string; date: Date } | null = null;
+    let earliestNextDose: { med: Medication; time: string; date: Date } | null = null;
 
-    // Check up to 7 days ahead
-    for (let i = 0; i < 7; i++) {
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
       const checkDate = new Date();
-      checkDate.setDate(now.getDate() + i);
-      const daySlug = daySlugs[checkDate.getDay()];
-      const isToday = i === 0;
+      checkDate.setDate(now.getDate() + dayOffset);
+      const currentDaySlug = weekDaySlugs[checkDate.getDay()];
+      const isCheckingToday = dayOffset === 0;
 
-      // Meds programmed for this day
-      const medsForDay = meds.filter((m) => m.days.includes(daySlug));
+      const scheduledMedsForDay = treatments.filter((m) => m.days.includes(currentDaySlug));
+      let doseCandidates: { med: Medication; time: string; date: Date }[] = [];
 
-      let candidates: { med: Medication; time: string; date: Date }[] = [];
-
-      medsForDay.forEach((med) => {
+      scheduledMedsForDay.forEach((med) => {
         med.times.forEach((time) => {
-          const [h, m] = time.split(":").map(Number);
-          const doseDate = new Date(checkDate);
-          doseDate.setHours(h, m, 0, 0);
+          const [hour, minute] = time.split(":").map(Number);
+          const scheduledDoseDate = new Date(checkDate);
+          scheduledDoseDate.setHours(hour, minute, 0, 0);
 
-          if (isToday) {
-            // If today, must be in future AND not taken
-            if (time > currentTime) {
-              // Check if taken (only relevant for today usually)
-              const alreadyTaken = takenDoses.some(
+          if (isCheckingToday) {
+            if (time > currentClockTime) {
+              const isAlreadyTaken = takenDosesToday.some(
                 (t) => t.medId === med.id && t.time === time,
               );
-              if (!alreadyTaken) {
-                candidates.push({ med, time, date: doseDate });
+              if (!isAlreadyTaken) {
+                doseCandidates.push({ med, time, date: scheduledDoseDate });
               }
             }
           } else {
-            // Future days: assume not taken yet
-            candidates.push({ med, time, date: doseDate });
+            doseCandidates.push({ med, time, date: scheduledDoseDate });
           }
         });
       });
 
-      if (candidates.length > 0) {
-        // Sort by time
-        candidates.sort((a, b) => a.date.getTime() - b.date.getTime());
-        foundNext = candidates[0];
-        break; // Found the earliest next dose
+      if (doseCandidates.length > 0) {
+        doseCandidates.sort((a, b) => a.date.getTime() - b.date.getTime());
+        earliestNextDose = doseCandidates[0];
+        break;
       }
     }
 
-    if (foundNext) {
-      setNextMedication(foundNext.med);
-      setNextMedicationTime(foundNext.time);
-      updateTimeUntil(foundNext.date);
+    if (earliestNextDose) {
+      setNextMedication(earliestNextDose.med);
+      setNextMedicationTime(earliestNextDose.time);
+      updateTimeUntil(earliestNextDose.date);
     } else {
       setNextMedication(null);
       setNextMedicationTime("");
@@ -166,11 +175,15 @@ export const useDashboardViewModel = () => {
 
   useFocusEffect(
     useCallback(() => {
-      checkMedications();
+      refreshDashboardData();
       setGreeting(getGreeting());
-    }, [checkMedications]),
+    }, [refreshDashboardData]),
   );
 
+
+  /**
+   * Calcula o tempo restante amigável até a próxima dose.
+   */
   const updateTimeUntil = (targetDate: Date) => {
     const now = new Date();
     const diffMs = targetDate.getTime() - now.getTime();
@@ -192,6 +205,9 @@ export const useDashboardViewModel = () => {
     }
   };
 
+  /**
+   * Confirma a ingestão da medicação (incluindo doses antecipadas).
+   */
   const confirmEarlyDose = async (
     mood?: number,
     anxiety?: boolean,
@@ -218,9 +234,11 @@ export const useDashboardViewModel = () => {
         notes,
       );
       await repository.markDateAsTaken(todayDate);
-      await checkMedications();
+      await refreshDashboardData();
     }
   };
+
+
 
   const userName = user?.name ? user.name.split(" ")[0] : "Usuário";
 
@@ -237,3 +255,4 @@ export const useDashboardViewModel = () => {
     hasUnreadNotifications,
   };
 };
+
