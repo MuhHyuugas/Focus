@@ -38,6 +38,8 @@ builder.Services.AddScoped<IRegistroDiarioRepository, RegistroDiarioRepository>(
 builder.Services.AddScoped<Focus.Application.UseCases.Diario.RegistrarDiario>();
 builder.Services.AddScoped<Focus.Application.UseCases.Diario.ObterHistoricoDiario>();
 
+builder.Services.AddScoped<Focus.Application.UseCases.Medicacoes.ListarMedicacoes>();
+
 var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Secret"] ?? "SuperSecretKeyForDevelopmentOnly123456");
 
 builder.Services.AddAuthentication(x =>
