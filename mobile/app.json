@@ -23,9 +23,7 @@
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "android.permission.SCHEDULE_EXACT_ALARM"
-      ],
+      "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"],
       "package": "com.anonymous.focus"
     },
     "web": {
@@ -52,8 +50,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logo.png",
-          "color": "#ffffff",
+         // "icon": "./assets/images/notification-icon.png",
+         // "color": "#ffffff",
           "permissions": {
             "allowExactAlarm": true
           }
@@ -70,6 +68,10 @@
       "eas": {
         "projectId": "49d9c0f1-5cf9-4fed-913b-240d7c2d2f0b"
       }
+    },
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#ffffff"
     }
   }
 }

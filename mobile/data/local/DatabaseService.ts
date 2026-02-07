@@ -6,8 +6,9 @@ export class DatabaseService {
   private static instance: DatabaseService;
   private db: SQLite.SQLiteDatabase | null = null; // Use null initially
 
-  private constructor() { }
+  private constructor() {}
 
+  // padrão singleton para garantir que tenhamos apenas uma instância do banco de dados
   public static getInstance(): DatabaseService {
     if (!DatabaseService.instance) {
       DatabaseService.instance = new DatabaseService();
@@ -72,6 +73,13 @@ export class DatabaseService {
         updated_at INTEGER,
         FOREIGN KEY (id_tratamento) REFERENCES treatments (id)
       );
+
+      CREATE TABLE IF NOT EXISTS daily_marks (
+        id TEXT PRIMARY KEY NOT NULL,
+        data TEXT NOT NULL,
+        created_at INTEGER,
+        updated_at INTEGER
+      );
     `);
 
     await this.seed();
@@ -81,21 +89,27 @@ export class DatabaseService {
     try {
       if (!this.db) return;
 
-      const result = await this.db.getAllAsync<{ count: number }>("SELECT count(*) as count FROM medications");
+      const result = await this.db.getAllAsync<{ count: number }>(
+        "SELECT count(*) as count FROM medications",
+      );
       const count = result[0]?.count || 0;
 
       if (count === 0) {
-        console.log("[DatabaseService] Seeding database with initial medications...");
+        console.log(
+          "[DatabaseService] Seeding database with initial medications...",
+        );
         const now = Date.now();
 
         for (const med of SEED_MEDICATIONS) {
           const id = Crypto.randomUUID();
           await this.db.runAsync(
             "INSERT INTO medications (id, nome, dosagem_padrao, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-            [id, med.name, med.dosage, now, now]
+            [id, med.name, med.dosage, now, now],
           );
         }
-        console.log(`[DatabaseService] Seeded ${SEED_MEDICATIONS.length} medications.`);
+        console.log(
+          `[DatabaseService] Seeded ${SEED_MEDICATIONS.length} medications.`,
+        );
       }
     } catch (e) {
       console.error("Error seeding database:", e);
@@ -111,18 +125,16 @@ export class DatabaseService {
       throw new Error("Database not initialized");
     }
 
-    // expo-sqlite v14+ generic helper
-    // For SELECT queries we use getAllAsync, for others runAsync
     const isSelect = query.trim().toUpperCase().startsWith("SELECT");
 
     try {
-      console.log(`[SQLite] Executing: ${query} | Params: ${JSON.stringify(params)}`);
+      console.log(
+        `[SQLite] Executing: ${query} | Params: ${JSON.stringify(params)}`,
+      );
       if (isSelect) {
         return await this.db.getAllAsync(query, params);
       } else {
         await this.db.runAsync(query, params);
-        // For insert/update, usually we don't need to return rows like SELECT.
-        // If needed, we can return empty array or specific result structure.
         return [];
       }
     } catch (error) {

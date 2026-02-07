@@ -65,7 +65,9 @@ const MedItem = ({ medication, sideEffects }: MedItemProps) => {
               )}
               <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)}>
                 <Text className="text-xs text-[#179A9B] mt-1">
-                  {isExpanded ? "Ver menos" : "Ver mais"}
+                  {isExpanded
+                    ? "Ver menos"
+                    : `Ver mais ${sideEffects.length > 0 ? `(${sideEffects.length} efeitos)` : ""}`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -76,10 +78,10 @@ const MedItem = ({ medication, sideEffects }: MedItemProps) => {
       {isExpanded && sideEffects.length > 0 && (
         <View className="mt-2 w-full flex flex-col items-start border-t border-gray-200 pt-2">
           <Text className="text-medium font-bold text-gray-700 text-left mb-1">
-            Efeitos colaterais:
+            Efeitos colaterais ({sideEffects.length}):
           </Text>
-          {sideEffects.map((effect) => (
-            <View key={effect.id} className="mb-2">
+          {sideEffects.map((effect, index) => (
+            <View key={`${effect.id}-${index}`} className="mb-2">
               <Text className="text-xs text-left text-gray-600 font-semibold">
                 {formatDate(effect.date)} - {effect.description}
               </Text>

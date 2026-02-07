@@ -11,7 +11,6 @@ import DaySelector from "./components/daySelector";
 import MedItem from "./components/medItem";
 import TimeSelector from "./components/timeSelector";
 
-
 const MyMedsView = () => {
   const {
     medicationName,
@@ -51,7 +50,11 @@ const MyMedsView = () => {
                 <Text className="text-2xl font-bold w-2/3 p-2">
                   Cadastrar novo medicamento
                 </Text>
-                <Image source={images.medshield} className="w-12 h-12" />
+                <Image
+                  source={images.medBottle}
+                  className="w-24 h-24 m-2"
+                  resizeMode="contain"
+                />
               </View>
 
               <View className="flex flex-col p-2 justify-start w-full">
@@ -93,13 +96,15 @@ const MyMedsView = () => {
                 <View className="flex flex-row items-center gap-2">
                   <Text>Dosagem:</Text>
                   <View className="flex-1">
-                    <Input
-                      placeholder="Dosagem (Automático)"
-                      value={dosage}
-                      editable={false}
-                      className="text-base bg-gray-100 text-gray-500"
-                      containerClassName="flex-1"
-                    />
+                    {dosage ? (
+                      <Text className="text-base text-gray-800 m-2">
+                        {dosage}
+                      </Text>
+                    ) : (
+                      <Text className="text-base text-gray-400 p-2 italic">
+                        Depende do medicamento selecionado
+                      </Text>
+                    )}
                   </View>
                 </View>
 
@@ -155,8 +160,9 @@ const MyMedsView = () => {
               className="justify-end items-end text-primary-foreground mx-4 "
             >
               <View
-                className={`flex flex-row items-center justify-between p-2 px-4 rounded-full shadow-lg ${isEditing ? "bg-red-500" : "bg-[#179A9B]"
-                  }`}
+                className={`flex flex-row items-center justify-between p-2 px-4 rounded-full shadow-lg ${
+                  isEditing ? "bg-red-500" : "bg-[#179A9B]"
+                }`}
               >
                 <Text className="text-base text-white font-semibold px-2">
                   {isEditing ? "Parar edição" : "Editar medicamentos"}
@@ -175,8 +181,9 @@ const MyMedsView = () => {
                   }}
                 >
                   <View
-                    className={`rounded-xl ${isEditing ? "border-2 border-[#179A9B]" : ""
-                      }`}
+                    className={`rounded-xl ${
+                      isEditing ? "border-2 border-[#179A9B]" : ""
+                    }`}
                   >
                     <MedItem
                       medication={med}

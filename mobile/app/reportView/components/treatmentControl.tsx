@@ -1,6 +1,6 @@
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { HistoryItem } from "@/features/report/presentation/viewmodels/useReportViewModel";
+import { HistoryItem } from "@/features/report/domain/entities/HistoryItem";
 import { AlarmClock, Calendar1 } from "lucide-react-native";
 import { ScrollView, View } from "react-native";
 import TreatmentDetail from "./treatmentDetail";

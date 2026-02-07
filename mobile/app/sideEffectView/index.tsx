@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Text } from "@/components/ui/text";
-import { useNewEffectViewModel } from "@/features/sideEffects/presentation/viewmodels/useNewEffectViewModel";
+import { useSideEffectViewModel } from "@/features/sideEffects/presentation/viewmodels/useSideEffectViewModel";
 import { Stack } from "expo-router";
 import React from "react";
 import { Image, ScrollView, View } from "react-native";
@@ -16,7 +16,7 @@ import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { images } from "@/assets/assets";
 import EffectItem from "./components/effectItem";
 
-const NewEffectView = () => {
+const SideEffectView = () => {
   const {
     medications,
     setSelectedMedicationId,
@@ -25,8 +25,14 @@ const NewEffectView = () => {
     setSelectedEffectTypeId,
     notesMap,
     updateNotes,
+    moodMap,
+    updateMood,
+    anxietyMap,
+    updateAnxiety,
+    focusMap,
+    updateFocus,
     saveSideEffect,
-  } = useNewEffectViewModel();
+  } = useSideEffectViewModel();
 
   return (
     <>
@@ -73,16 +79,44 @@ const NewEffectView = () => {
               value={selectedEffectTypeId}
               onValueChange={setSelectedEffectTypeId}
             >
-              {sideEffectTypes.map((effect) => (
-                <EffectItem
-                  key={effect.id}
-                  id={effect.id}
-                  text={effect.name}
-                  description={effect.description}
-                  notes={notesMap[effect.id] || ""}
-                  onChangeNotes={(value) => updateNotes(effect.id, value)}
-                />
-              ))}
+              {sideEffectTypes.map((effect) => {
+                let effectImage = images.others;
+                switch (effect.id) {
+                  case "type-1":
+                    effectImage = images.happy;
+                    break;
+                  case "type-2":
+                    effectImage = images.target;
+                    break;
+                  case "type-3":
+                    effectImage = images.sick;
+                    break;
+                  case "type-4":
+                    effectImage = images.sleep;
+                    break;
+                  case "type-5":
+                    effectImage = images.others;
+                    break;
+                }
+
+                return (
+                  <EffectItem
+                    key={effect.id}
+                    id={effect.id}
+                    text={effect.name}
+                    description={effect.description}
+                    image={effectImage}
+                    notes={notesMap[effect.id] || ""}
+                    onChangeNotes={(value) => updateNotes(effect.id, value)}
+                    mood={moodMap[effect.id]}
+                    onMoodChange={(value) => updateMood(effect.id, value)}
+                    anxiety={anxietyMap[effect.id]}
+                    onAnxietyChange={(value) => updateAnxiety(effect.id, value)}
+                    focus={focusMap[effect.id]}
+                    onFocusChange={(value) => updateFocus(effect.id, value)}
+                  />
+                );
+              })}
             </Accordion>
           </View>
           <Button
@@ -99,4 +133,4 @@ const NewEffectView = () => {
   );
 };
 
-export default NewEffectView;
+export default SideEffectView;

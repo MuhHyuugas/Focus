@@ -71,7 +71,7 @@ export function useNotificationsViewModel() {
     )
       return;
 
-    const { medicationId } = notification.data;
+    const { medicationId, doseTime } = notification.data;
     if (!medicationId) return;
 
     try {
@@ -90,7 +90,7 @@ export function useNotificationsViewModel() {
 
       await medRepository.markDoseTaken(
         medicationId,
-        timeStr,
+        doseTime || timeStr, // Use scheduled time from notification, fallback to current
         dateStr,
         timeStr, // actual time
         medName,

@@ -5,7 +5,7 @@ export default function DashboardStackLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="newEffect"
+        name="sideEffect"
         options={{ headerShown: true, title: "Novo Efeito" }}
       />
     </Stack>

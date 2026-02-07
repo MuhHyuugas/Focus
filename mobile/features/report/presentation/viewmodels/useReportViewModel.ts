@@ -3,17 +3,18 @@ import { CalendarProps, DateData } from "react-native-calendars";
 import { ReportRepositoryImpl } from "../../data/repositories/ReportRepositoryImpl";
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { useFocusEffect } from "expo-router";
+import { GetMarkedDates } from "../../domain/usecases/GetMarkedDates";
+import { GetMonthlyReport } from "../../domain/usecases/GetMonthlyReport";
+import { HistoryItem } from "../../domain/entities/HistoryItem";
+
+import { ToggleMarkedDate } from "../../domain/usecases/ToggleMarkedDate";
 
 const repository = new ReportRepositoryImpl();
 const medRepository = new MedicationRepositoryImpl();
 
-export interface HistoryItem {
-  id: string;
-  medicationName: string;
-  date: string;
-  time: string;
-  meridiem: number;
-}
+const getMarkedDatesUseCase = new GetMarkedDates(repository);
+const getMonthlyReportUseCase = new GetMonthlyReport(medRepository);
+const toggleMarkedDateUseCase = new ToggleMarkedDate(repository);
 
 // funcao que define o viewmodel do relatorio
 export function useReportViewModel() {
@@ -36,47 +37,14 @@ export function useReportViewModel() {
 
   // funcao que carrega as datas marcadas
   const loadMarkedDates = useCallback(async () => {
-    const dates = await repository.getMarkedDates();
+    const dates = await getMarkedDatesUseCase.execute();
     setMarkedDates(dates);
   }, []);
 
   const loadHistory = useCallback(async () => {
-    const doses = await medRepository.getAllTakenDoses();
-    const medications = await medRepository.getMedications();
-
     const [year, month] = currentDate.split("-");
-    const targetPrefix = `${year}-${month}`;
-
-    const filteredDoses = doses.filter((d) => d.date.startsWith(targetPrefix));
-
-    // Sort filteredDoses first.
-    filteredDoses.sort((a, b) => {
-      if (a.date !== b.date) return b.date.localeCompare(a.date);
-      return b.time.localeCompare(a.time);
-    });
-
-    // Re-map sorted
-    const sortedItems = filteredDoses.map((dose, index) => {
-      const med = medications.find((m) => m.id === dose.medId);
-      const [hourStr] = dose.time.split(":");
-      const hour = parseInt(hourStr);
-      const isPm = hour >= 12;
-      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-      const [, month, day] = dose.date.split("-");
-
-      // Prefer the name stored with the dose, fallback to current med list lookup
-      const nameToDisplay = dose.medName || (med ? med.name : "Desconhecido");
-
-      return {
-        id: `${dose.date}-${dose.time}-${index}`,
-        medicationName: nameToDisplay,
-        date: `${day}.${month}`,
-        time: displayHour.toString(),
-        meridiem: isPm ? 2 : 1,
-      };
-    });
-
-    setHistoryItems(sortedItems);
+    const items = await getMonthlyReportUseCase.execute(year, month);
+    setHistoryItems(items);
   }, [currentDate]);
 
   useFocusEffect(
@@ -106,27 +74,17 @@ export function useReportViewModel() {
   );
 
   // funcao que define a selecao de dia do calendario
-  const handleDayPress = useCallback((day: DateData) => {
-    setMarkedDates((prev: CalendarProps["markedDates"]) => {
-      const isSelected = prev?.[day.dateString]?.selected;
-      const newMarkedDates = { ...prev };
-
-      if (isSelected) {
-        delete newMarkedDates[day.dateString];
-      } else {
-        newMarkedDates[day.dateString] = {
-          selected: true,
-          marked: true,
-          selectedColor: "#179A9B",
-        };
+  const handleDayPress = useCallback(
+    async (day: DateData) => {
+      try {
+        await toggleMarkedDateUseCase.execute(day.dateString);
+        await loadMarkedDates(); // Refresh markers
+      } catch (error) {
+        console.error("Error toggling date:", error);
       }
-
-      // Salva as datas marcadas
-      repository.saveMarkedDates(newMarkedDates);
-
-      return newMarkedDates;
-    });
-  }, []);
+    },
+    [loadMarkedDates],
+  );
 
   // funcao que define a mudança de aba
   const handleTabChange = (value: string) => {

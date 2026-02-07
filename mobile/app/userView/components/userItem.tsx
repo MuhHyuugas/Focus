@@ -22,7 +22,7 @@ const UserItem = ({
     >
       <Icon color={type === "danger" ? "red" : "#179A9B"} className="m-2" />
       <Text
-        className={`text-xl ${type === "danger" ? "text-red-500" : type === "option" ? "text-primary" : "text-gray-400"}`}
+        className={`text-xl flex-1 ${type === "danger" ? "text-red-500" : type === "option" ? "text-primary" : "text-gray-400"}`}
       >
         {info}
       </Text>

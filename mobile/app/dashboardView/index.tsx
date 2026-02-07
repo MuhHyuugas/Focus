@@ -2,12 +2,7 @@ import { images } from "@/assets/assets";
 import { Text } from "@/components/ui/text";
 import { useDashboardViewModel } from "@/features/dashboard/presentation/viewmodels/useDashboardViewModel";
 import { Link, useRouter } from "expo-router";
-import {
-  Bell,
-  FastForward,
-  Plus,
-  Share,
-} from "lucide-react-native";
+import { Bell, Check, FastForward, Plus } from "lucide-react-native";
 import {
   ImageBackground,
   ScrollView,
@@ -19,8 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import DashboardButton from "./components/dashButton";
 import DashCard from "./components/dashCard";
-import SymptomModal from "./components/SymptomModal";
-import { useState } from "react";
 
 const ELIPSE = images.elipse;
 const ELIPSE_FLIP = images.elipseFlip;
@@ -38,8 +31,6 @@ export default function DashboardView() {
     topSideEffect,
     hasUnreadNotifications,
   } = useDashboardViewModel();
-
-  const [modalVisible, setModalVisible] = useState(false);
 
   return (
     <SafeAreaView className="flex-1 bg-[#179A9B]" edges={["top"]}>
@@ -83,7 +74,7 @@ export default function DashboardView() {
                 text="Registrar novo efeito colateral"
                 icon={Plus}
                 iconClassName="w-[12vw] h-[12vw]"
-                onPress={() => router.push("/newEffect")}
+                onPress={() => router.push("/sideEffect")}
               />
             </View>
             {hasMedications ? (
@@ -120,10 +111,14 @@ export default function DashboardView() {
                     </View>
 
                     <DashboardButton
-                      text="Confirmar dose antecipada"
-                      icon={FastForward}
+                      text={
+                        timeUntilNext === "Agora"
+                          ? "Confirmar dose"
+                          : "Confirmar dose antecipada"
+                      }
+                      icon={timeUntilNext === "Agora" ? Check : FastForward}
                       iconClassName="w-[8vw] h-[8vw]"
-                      onPress={() => setModalVisible(true)}
+                      onPress={() => confirmEarlyDose()}
                     />
                   </>
                 )}
@@ -163,15 +158,6 @@ export default function DashboardView() {
           </View>
         </View>
       </ScrollView>
-
-      <SymptomModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onConfirm={async (data) => {
-          await confirmEarlyDose(data.mood, data.anxiety, data.focus, data.notes);
-          setModalVisible(false);
-        }}
-      />
     </SafeAreaView>
   );
 }

@@ -27,7 +27,7 @@ export default function DashboardButton({
   iconClassName,
 }: DashboardButtonProps) {
   return (
-    <UIButton className={`bg-[#13203F] ${className}`} onPress={onPress}>
+    <UIButton className={`bg-[#052A34] ${className}`} onPress={onPress}>
       {Icon && (
         <Icon color={iconColor} size={iconSize} className={iconClassName} />
       )}

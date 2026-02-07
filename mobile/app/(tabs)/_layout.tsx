@@ -53,7 +53,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="mymeds"
         options={{
-          title: "Meus Medicamentos",
+          title: "Meu Tratamento",
           tabBarIcon: ({ color }) => <Pill size={28} color={color} />,
         }}
       />
@@ -71,7 +71,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="newEffect"
+        name="sideEffect"
         options={{
           href: null,
         }}

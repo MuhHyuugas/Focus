@@ -14,7 +14,7 @@ export interface MedicationRepository {
     mood?: number,
     anxiety?: boolean,
     focus?: number,
-    notes?: string
+    notes?: string,
   ): Promise<void>;
   getTakenDoses(date: string): Promise<
     {
@@ -36,5 +36,16 @@ export interface MedicationRepository {
   >;
   markDateAsTaken(date: string): Promise<void>;
   syncCatalog(): Promise<void>;
-  searchCatalog(query: string): Promise<{ id: string; name: string; defaultDosage: string }[]>;
+  searchCatalog(
+    query: string,
+  ): Promise<{ id: string; name: string; defaultDosage: string }[]>;
+  getAllTakenDoses(): Promise<
+    {
+      medId: string;
+      time: string;
+      date: string;
+      actualTakenTime?: string;
+      medName?: string;
+    }[]
+  >;
 }

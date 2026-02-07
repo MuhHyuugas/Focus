@@ -1,6 +1,7 @@
 import { MedicationRepository } from "@/features/meds/domain/repositories/MedicationRepository";
 import { ReportRepository } from "@/features/report/domain/repositories/ReportRepository";
 import { AuthRepository } from "../repositories/AuthRepository";
+import { NotificationService } from "@/features/notifications/domain/services/NotificationService";
 
 // classe que executa o caso de uso de logout
 export class LogoutUseCase {
@@ -8,9 +9,11 @@ export class LogoutUseCase {
     private authRepository: AuthRepository,
     private medicationRepository: MedicationRepository,
     private reportRepository: ReportRepository,
+    private notificationService: NotificationService,
   ) {}
 
   async execute(): Promise<void> {
+    await this.notificationService.cancelAllNotifications();
     await this.medicationRepository.clearAll();
     await this.reportRepository.clearData();
     return await this.authRepository.logout();
