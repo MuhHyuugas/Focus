@@ -11,7 +11,9 @@ namespace Focus.Application.UseCases.Tratamentos
 
         public List<Tratamento> Executar(Guid usuarioId)
         {
-            return _repository.BuscarPorUsuario(usuarioId);
+            return _repository.BuscarPorUsuario(usuarioId)
+                .Where(t => t.Status == "ativo")
+                .ToList();
         }
     }
 }

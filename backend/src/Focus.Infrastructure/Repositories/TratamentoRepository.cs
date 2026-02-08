@@ -29,5 +29,20 @@ namespace Focus.Infrastructure.Repositories
                 .Where(t => t.UsuarioId == usuarioId)
                 .ToList();
         }
+
+        public void DesativarTratamentosAtivos(Guid usuarioId)
+        {
+            var ativos = _context.Tratamentos
+                .Where(t => t.UsuarioId == usuarioId && t.Status == "ativo")
+                .ToList();
+
+            foreach (var t in ativos)
+            {
+                t.Status = "inativo";
+                t.UpdatedAt = DateTime.UtcNow;
+            }
+
+            _context.SaveChanges();
+        }
     }
 }

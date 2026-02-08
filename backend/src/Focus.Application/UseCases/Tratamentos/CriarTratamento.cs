@@ -28,6 +28,9 @@ namespace Focus.Application.UseCases.Tratamentos
                 throw new ArgumentException("ID do usuário inválido");
             }
 
+            // Desativar tratamentos ativos anteriores para garantir que apenas 1 esteja ativo
+            _tratamentoRepository.DesativarTratamentosAtivos(usuarioGuid);
+
             Guid? treatmentId = null;
             if (!string.IsNullOrEmpty(id) && Guid.TryParse(id, out var guidParsed))
             {

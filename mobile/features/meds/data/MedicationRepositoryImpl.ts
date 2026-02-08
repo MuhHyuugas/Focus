@@ -76,9 +76,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           if (treatCheck.length > 0) {
             await this.db.executeQuery(
               `UPDATE treatments SET 
-                id_usuario = ?, id_medicamento = ?, dose = ?, dias = ?, horarios = ?, updated_at = ? 
+                id_usuario = ?, id_medicamento = ?, dose = ?, dias = ?, horarios = ?, status = ?, updated_at = ? 
                WHERE id = ?`,
-              [userId, t.medicacaoId, t.dose, t.dias, t.horarios, now, t.id],
+              [userId, t.medicacaoId, t.dose, t.dias, t.horarios, t.status || 'ativo', now, t.id],
             );
           } else {
             // Check if we have a "Ghost" duplicate (Same Med, Different ID)
@@ -94,9 +94,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             }
 
             await this.db.executeQuery(
-              `INSERT INTO treatments (id, id_usuario, id_medicamento, dose, dias, horarios, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [t.id, userId, t.medicacaoId, t.dose, t.dias, t.horarios, now, now],
+              `INSERT INTO treatments (id, id_usuario, id_medicamento, dose, dias, horarios, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [t.id, userId, t.medicacaoId, t.dose, t.dias, t.horarios, t.status || 'ativo', now, now],
             );
           }
         }
@@ -166,7 +166,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           t.dose 
         FROM treatments t
         JOIN medications m ON t.id_medicamento = m.id
-        WHERE t.id_usuario = ?
+        WHERE t.id_usuario = ? AND t.status = 'ativo'
       `;
 
       const rows = await this.db.executeQuery(query, [userId]);
@@ -188,6 +188,12 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     try {
       const userId = await this._getUserId();
       const now = Date.now();
+
+      // Desativar tratamentos ativos anteriores localmente
+      await this.db.executeQuery(
+        "UPDATE treatments SET status = 'inativo', updated_at = ? WHERE id_usuario = ? AND status = 'ativo'",
+        [now, userId],
+      );
 
       let medId = "";
       if (medication.id) {
