@@ -97,7 +97,45 @@ export class DatabaseService {
       );
     `);
 
+    await this.applyMigrations();
     await this.seed();
+  }
+
+  private async applyMigrations(): Promise<void> {
+    if (!this.db) return;
+
+    try {
+      // 1. Check for status column in treatments
+      const tableInfo = await this.db.getAllAsync<any>(
+        "PRAGMA table_info(treatments)",
+      );
+      const hasStatus = tableInfo.some((col: any) => col.name === "status");
+
+      if (!hasStatus) {
+        console.log("[DatabaseService] Migration: Adding 'status' column to treatments...");
+        await this.db.execAsync(
+          "ALTER TABLE treatments ADD COLUMN status TEXT DEFAULT 'ativo'",
+        );
+      }
+
+      const hasDataInicio = tableInfo.some((col: any) => col.name === "data_inicio");
+      if (!hasDataInicio) {
+        console.log("[DatabaseService] Migration: Adding 'data_inicio' column to treatments...");
+        await this.db.execAsync(
+          "ALTER TABLE treatments ADD COLUMN data_inicio TEXT",
+        );
+      }
+
+      const hasDataFim = tableInfo.some((col: any) => col.name === "data_fim");
+      if (!hasDataFim) {
+        console.log("[DatabaseService] Migration: Adding 'data_fim' column to treatments...");
+        await this.db.execAsync(
+          "ALTER TABLE treatments ADD COLUMN data_fim TEXT",
+        );
+      }
+    } catch (e) {
+      console.error("[DatabaseService] Error applying migrations:", e);
+    }
   }
 
   private async seed() {
