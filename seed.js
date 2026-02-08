@@ -4,10 +4,10 @@ const crypto = require('crypto');
 // Configuração do Banco de Dados
 // Ajuste conforme suas credenciais locais ou da AWS
 const dbConfig = {
-    host: 'localhost',
-    user: 'root',
-    password: 'password', // Altere para sua senha
-    database: 'focus_db'
+    host: '34.196.60.205',
+    user: 'focus_user',
+    password: 'Focus@2026!',
+    database: 'focus'
 };
 
 const medications = [

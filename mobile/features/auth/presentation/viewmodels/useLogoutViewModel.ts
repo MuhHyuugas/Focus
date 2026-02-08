@@ -5,15 +5,19 @@ import { LogoutUseCase } from "../../domain/use-cases/LogoutUseCase";
 
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { ReportRepositoryImpl } from "@/features/report/data/repositories/ReportRepositoryImpl";
+import { ExpoNotificationService } from "@/features/notifications/infrastructure/services/ExpoNotificationService";
 import { useAuthContext } from "../contexts/AuthContext";
 
 const authRepository = new AuthRepositoryImpl();
 const medicationRepository = new MedicationRepositoryImpl();
 const reportRepository = new ReportRepositoryImpl();
+const notificationService = new ExpoNotificationService();
+
 const logoutUseCase = new LogoutUseCase(
   authRepository,
   medicationRepository,
   reportRepository,
+  notificationService,
 );
 
 export function useLogoutViewModel() {
