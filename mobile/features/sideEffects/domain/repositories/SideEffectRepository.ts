@@ -7,4 +7,5 @@ export interface SideEffectRepository {
   deleteSideEffect(id: string): Promise<void>;
   getSideEffectsByMedicationId(medId: string): Promise<SideEffect[]>;
   deleteSideEffectsByMedicationId(medId: string): Promise<void>;
+  syncData(): Promise<void>;
 }

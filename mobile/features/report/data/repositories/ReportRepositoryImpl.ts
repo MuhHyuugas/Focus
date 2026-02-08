@@ -16,6 +16,16 @@ export class ReportRepositoryImpl implements ReportRepository {
     return user.id;
   }
 
+  async getMarkedDatesArray(): Promise<string[]> {
+    try {
+      const marks = await this.db.executeQuery("SELECT data FROM daily_marks");
+      return marks.map((m: any) => m.data);
+    } catch (e) {
+      console.error("Error getting marked dates array", e);
+      return [];
+    }
+  }
+
   async getMarkedDates(): Promise<Record<string, any>> {
     try {
       const doses = await this.medRepository.getAllTakenDoses();

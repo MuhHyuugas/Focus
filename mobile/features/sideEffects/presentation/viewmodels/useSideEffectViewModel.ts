@@ -49,9 +49,9 @@ export const useSideEffectViewModel = () => {
   const [selectedMedicationId, setSelectedMedicationId] = useState<
     string | undefined
   >(undefined);
-  const [selectedEffectTypeIds, setSelectedEffectTypeIds] = useState<string[]>(
-    [],
-  );
+  const [selectedEffectTypeId, setSelectedEffectTypeId] = useState<
+    string | undefined
+  >(undefined);
   const [notesMap, setNotesMap] = useState<Record<string, string>>({});
   const [moodMap, setMoodMap] = useState<Record<string, number | undefined>>(
     {},
@@ -94,50 +94,48 @@ export const useSideEffectViewModel = () => {
     setFocusMap((prev) => ({ ...prev, [id]: focus }));
   };
 
-  const saveSideEffects = async () => {
+  const saveSideEffect = async () => {
     if (!selectedMedicationId) {
       alert("Selecione um medicamento");
       return;
     }
-    if (selectedEffectTypeIds.length === 0) {
-      alert("Selecione pelo menos um efeito colateral");
+    if (!selectedEffectTypeId) {
+      alert("Selecione qual o efeito colateral");
       return;
     }
 
     try {
-      // Loop through all selected effect IDs and save individually
-      for (const typeId of selectedEffectTypeIds) {
-        const effectType = SIDE_EFFECT_TYPES.find((t) => t.id === typeId);
-        if (!effectType) continue;
+      const effectType = SIDE_EFFECT_TYPES.find((t) => t.id === selectedEffectTypeId);
+      if (!effectType) return;
 
-        const newSideEffect: SideEffect = {
-          id: "", // Let repo generate UUID
-          medicationId: selectedMedicationId,
-          description: effectType.name,
-          notes: formatNotes(
-            notesMap[typeId] || "",
-            moodMap[typeId],
-            anxietyMap[typeId],
-            focusMap[typeId],
-          ),
-          date: new Date().toISOString(),
-        };
+      const newSideEffect: SideEffect = {
+        id: "", // Let repo generate UUID
+        medicationId: selectedMedicationId,
+        typeId: selectedEffectTypeId,
+        description: effectType.name,
+        notes: notesMap[selectedEffectTypeId] || "",
+        date: new Date().toISOString(),
+        mood: moodMap[selectedEffectTypeId],
+        anxiety: anxietyMap[selectedEffectTypeId],
+        focus: focusMap[selectedEffectTypeId],
+      };
 
-        await saveSideEffectUseCase.execute(newSideEffect);
-      }
+      console.log("Saving Side Effect:", JSON.stringify(newSideEffect, null, 2));
 
-      alert("Efeitos salvos com sucesso!");
+      await saveSideEffectUseCase.execute(newSideEffect);
+
+      alert("Efeito salvo com sucesso!");
 
       // Limpar formulário
       setSelectedMedicationId(undefined);
-      setSelectedEffectTypeIds([]);
+      setSelectedEffectTypeId(undefined);
       setNotesMap({});
       setMoodMap({});
       setAnxietyMap({});
       setFocusMap({});
     } catch (e) {
       console.error(e);
-      alert("Erro ao salvar efeitos");
+      alert("Erro ao salvar efeito");
     }
   };
 
@@ -147,8 +145,8 @@ export const useSideEffectViewModel = () => {
     setSelectedMedicationId,
     isLoading,
     sideEffectTypes: SIDE_EFFECT_TYPES,
-    selectedEffectTypeIds,
-    setSelectedEffectTypeIds,
+    selectedEffectTypeId,
+    setSelectedEffectTypeId,
     notesMap,
     updateNotes,
     moodMap,
@@ -157,6 +155,6 @@ export const useSideEffectViewModel = () => {
     updateAnxiety,
     focusMap,
     updateFocus,
-    saveSideEffects,
+    saveSideEffect,
   };
 };

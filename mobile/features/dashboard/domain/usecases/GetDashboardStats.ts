@@ -1,11 +1,13 @@
 import { MedicationRepository } from "@/features/meds/domain/repositories/MedicationRepository";
 import { SideEffectRepository } from "@/features/sideEffects/domain/repositories/SideEffectRepository";
+import { ReportRepository } from "@/features/report/domain/repositories/ReportRepository";
 
 export class GetDashboardStats {
   constructor(
     private medRepository: MedicationRepository,
     private sideEffectRepository: SideEffectRepository,
-  ) {}
+    private reportRepository: ReportRepository,
+  ) { }
 
   async execute(): Promise<{ streakDays: number; topSideEffect: string }> {
     const streakDays = await this.calculateStreak();
@@ -17,8 +19,12 @@ export class GetDashboardStats {
   private async calculateStreak(): Promise<number> {
     try {
       const allTaken = await this.medRepository.getAllTakenDoses();
+      const dailyMarks = await this.reportRepository.getMarkedDatesArray();
 
-      const uniqueDates = Array.from(new Set(allTaken.map((d) => d.date))).sort(
+      // Merge taken doses dates and daily marks dates
+      const combinedDates = [...allTaken.map((d) => d.date), ...dailyMarks];
+
+      const uniqueDates = Array.from(new Set(combinedDates)).sort(
         (a, b) => b.localeCompare(a),
       );
 

@@ -3,6 +3,7 @@ import { SideEffectRepository } from "@/features/sideEffects/domain/repositories
 import { DatabaseService } from "@/data/local/DatabaseService";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "@/lib/api";
 
 const CURRENT_USER_KEY = "@focus:currentUser";
 
@@ -26,21 +27,21 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
   async getSideEffects(): Promise<SideEffect[]> {
     try {
       const userId = await this._getUserId();
-      // Fetch dose_logs that look like side effects (e.g. have notes)
-      // Since we don't have a specific type column, we assume any log with notas is relevant?
-      // Or maybe we treat ALL logs as potential carriers.
-      // But the UI expects "SideEffects".
-      // Let's return logs that have 'notas' for now, as that's where we map 'notes'.
       const query = `
         SELECT 
-          d.id, 
-          d.id_tratamento as medicationId, 
-          d.horario_tomado as date, 
-          d.notas
-        FROM dose_logs d
-        JOIN treatments t ON d.id_tratamento = t.id
-        WHERE t.id_usuario = ? AND d.notas IS NOT NULL AND d.notas != ''
-        ORDER BY d.horario_tomado DESC
+          s.id, 
+          s.id_tratamento as medicationId, 
+          s.tipo_id as typeId,
+          s.descricao as description,
+          s.data as date, 
+          s.humor,
+          s.ansiedade,
+          s.foco,
+          s.notas
+        FROM side_effects s
+        JOIN treatments t ON s.id_tratamento = t.id
+        WHERE t.id_usuario = ?
+        ORDER BY s.data DESC
       `;
 
       const rows = await this.db.executeQuery(query, [userId]);
@@ -48,9 +49,13 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
       return rows.map((row: any) => ({
         id: row.id,
         medicationId: row.medicationId,
+        typeId: row.typeId,
+        description: row.description,
         date: row.date,
         notes: row.notas,
-        description: "", // Not saved, UI only or derived
+        mood: row.humor,
+        anxiety: row.ansiedade === 1,
+        focus: row.foco,
       }));
     } catch (e) {
       console.error("Error getting side effects", e);
@@ -62,61 +67,61 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
     try {
       const now = Date.now();
       const id = sideEffect.id || Crypto.randomUUID();
-
-      // 1. Get Treatment/Plan Time
-      // We need to find the treatment ID. The sideEffect should have medicationId.
-      // dose_logs links to 'treatments`.
-      // So first we need to find the active treatment for this medication.
       const userId = await this._getUserId();
-      const treatments = await this.db.executeQuery(
-        "SELECT id, horarios FROM treatments WHERE id_medicamento = ? AND id_usuario = ?",
+
+      console.log(`SideEffectRepository: Saving Effect. MedID/TreatID: ${sideEffect.medicationId}, Type: ${sideEffect.typeId}, Mood: ${sideEffect.mood}, Focus: ${sideEffect.focus}`);
+
+      // 1. Resolve Treatment ID
+      let treatmentId = sideEffect.medicationId;
+      const treatById = await this.db.executeQuery(
+        "SELECT id FROM treatments WHERE id = ? AND id_usuario = ?",
         [sideEffect.medicationId, userId],
       );
 
-      if (treatments.length === 0) {
-        throw new Error("No active treatment found for this medication.");
-      }
+      if (treatById.length === 0) {
+        const treatByMed = await this.db.executeQuery(
+          "SELECT id FROM treatments WHERE id_medicamento = ? AND id_usuario = ?",
+          [sideEffect.medicationId, userId],
+        );
 
-      const treatment = treatments[0];
-      const treatmentId = treatment.id;
-
-      let horarioPlano = sideEffect.date; // Default to taken time if no plan found
-
-      // Logic to find nearest plan time could go here.
-      // safely parse horarios
-      try {
-        const times = JSON.parse(treatment.horarios);
-        if (Array.isArray(times) && times.length > 0) {
-          // Find nearest time today?
-          // For simplicity, let's use the first scheduled time of the day of the side effect?
-          // Or just use the current time if it's an ad-hoc event?
-          // User said "get horario plano from the treatment table".
-          // Let's try to match the closest time.
-          const takenDate = new Date(sideEffect.date);
-          // ... simplistic approach: just use the sideEffect.date for now unless we implement complex matching.
-          // BUT, if dose_logs enforces foreign key on treatment, we have treatmentId.
-          // horario_plano is just a text field.
-          // Let's use the first index time combined with the date string.
-          const timeStr = times[0]; // e.g. "08:00"
-          const datePart = sideEffect.date.split("T")[0];
-          horarioPlano = `${datePart}T${timeStr}:00.000Z`;
+        if (treatByMed.length === 0) {
+          throw new Error("No active treatment found for this record.");
         }
-      } catch (e) {
-        // ignore parsing error
+        treatmentId = treatByMed[0].id;
       }
+
+      console.log(`SideEffectRepository: Resolved Treatment ID: ${treatmentId}`);
+
+      // 2. Insert into local SQLite
+      const moodVal = sideEffect.mood !== undefined && sideEffect.mood !== null ? Number(sideEffect.mood) : null;
+      const focusVal = sideEffect.focus !== undefined && sideEffect.focus !== null ? Number(sideEffect.focus) : null;
+      const anxietyVal = sideEffect.anxiety ? 1 : 0;
 
       await this.db.executeQuery(
-        `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, notas, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO side_effects (id, id_tratamento, tipo_id, descricao, data, humor, ansiedade, foco, notas, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           treatmentId,
-          horarioPlano,
-          sideEffect.date, // horario_tomado
+          sideEffect.typeId,
+          sideEffect.description,
+          sideEffect.date,
+          moodVal,
+          anxietyVal,
+          focusVal,
           sideEffect.notes,
           now,
           now,
         ],
+      );
+
+      // 3. Sync to Backend (Non-blocking)
+      this._syncSideEffectToBackend(id, treatmentId, {
+        ...sideEffect,
+        mood: moodVal ?? undefined,
+        focus: focusVal ?? undefined
+      }).catch((err) =>
+        console.error("Cloud sync for side effect failed:", err),
       );
     } catch (e) {
       console.error("Error saving side effect", e);
@@ -127,9 +132,19 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
   async updateSideEffect(updatedSideEffect: SideEffect): Promise<void> {
     try {
       const now = Date.now();
+      const moodVal = updatedSideEffect.mood !== undefined && updatedSideEffect.mood !== null ? Number(updatedSideEffect.mood) : null;
+      const focusVal = updatedSideEffect.focus !== undefined && updatedSideEffect.focus !== null ? Number(updatedSideEffect.focus) : null;
+
       await this.db.executeQuery(
-        "UPDATE dose_logs SET notas = ?, updated_at = ? WHERE id = ?",
-        [updatedSideEffect.notes, now, updatedSideEffect.id],
+        "UPDATE side_effects SET notas = ?, humor = ?, ansiedade = ?, foco = ?, updated_at = ? WHERE id = ?",
+        [
+          updatedSideEffect.notes,
+          moodVal,
+          updatedSideEffect.anxiety ? 1 : 0,
+          focusVal,
+          now,
+          updatedSideEffect.id,
+        ],
       );
     } catch (e) {
       console.error("Error updating side effect", e);
@@ -138,7 +153,7 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
 
   async deleteSideEffect(id: string): Promise<void> {
     try {
-      await this.db.executeQuery("DELETE FROM dose_logs WHERE id = ?", [id]);
+      await this.db.executeQuery("DELETE FROM side_effects WHERE id = ?", [id]);
     } catch (e) {
       console.error("Error deleting side effect", e);
     }
@@ -146,19 +161,22 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
 
   async getSideEffectsByMedicationId(medId: string): Promise<SideEffect[]> {
     try {
-      // Since getSideEffects filters by user, we can leverage it or query directly.
-      // Direct query is more efficient.
       const userId = await this._getUserId();
       const query = `
         SELECT 
-          d.id, 
-          d.id_tratamento as medicationId, 
-          d.horario_tomado as date, 
-          d.notas
-        FROM dose_logs d
-        JOIN treatments t ON d.id_tratamento = t.id
-        WHERE t.id_usuario = ? AND t.id_medicamento = ? AND d.notas IS NOT NULL AND d.notas != ''
-        ORDER BY d.horario_tomado DESC
+          s.id, 
+          s.id_tratamento as medicationId, 
+          s.tipo_id as typeId,
+          s.descricao as description,
+          s.data as date, 
+          s.humor,
+          s.ansiedade,
+          s.foco,
+          s.notas
+        FROM side_effects s
+        JOIN treatments t ON s.id_tratamento = t.id
+        WHERE t.id_usuario = ? AND t.id_medicamento = ?
+        ORDER BY s.data DESC
       `;
 
       const rows = await this.db.executeQuery(query, [userId, medId]);
@@ -166,9 +184,13 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
       return rows.map((row: any) => ({
         id: row.id,
         medicationId: row.medicationId,
+        typeId: row.typeId,
+        description: row.description,
         date: row.date,
         notes: row.notas,
-        description: "",
+        mood: row.humor,
+        anxiety: row.ansiedade === 1,
+        focus: row.foco,
       }));
     } catch (e) {
       return [];
@@ -177,22 +199,120 @@ export class SideEffectRepositoryImpl implements SideEffectRepository {
 
   async deleteSideEffectsByMedicationId(medId: string): Promise<void> {
     try {
-      // Logic to delete all logs for a med? Or just side effects?
-      // "Delete side effects"
-      // We should only delete logs that are considered side effects?
-      // But dose_logs mixes doses and side effects.
-      // If we delete by medication ID, we query treatments first.
       const userId = await this._getUserId();
-      // This is risky if we delete distinct doses.
-      // But usually clearing history clears everything.
-      // I'll assume this method is for clearing history.
       const query = `
-            DELETE FROM dose_logs 
+            DELETE FROM side_effects 
             WHERE id_tratamento IN (SELECT id FROM treatments WHERE id_medicamento = ? AND id_usuario = ?)
         `;
       await this.db.executeQuery(query, [medId, userId]);
     } catch (e) {
       console.error("Error deleting side effects by med id", e);
     }
+  }
+
+  async syncData(): Promise<void> {
+    try {
+      const userId = await this._getUserId();
+      console.log(`SideEffectRepository: Syncing symptoms for user ${userId}...`);
+
+      const response = await api.get(`/api/SideEffects/usuario/${userId}`);
+      const remoteEffects = response.data;
+
+      if (Array.isArray(remoteEffects)) {
+        const now = Date.now();
+
+        for (const remote of remoteEffects) {
+          // 1. Check if record exists by ID
+          const existing = await this.db.executeQuery(
+            "SELECT id FROM side_effects WHERE id = ?",
+            [remote.id],
+          );
+
+          if (existing.length > 0) {
+            // Update existing
+            await this.db.executeQuery(
+              `UPDATE side_effects SET 
+                id_tratamento = ?, tipo_id = ?, descricao = ?, data = ?, humor = ?, ansiedade = ?, foco = ?, notas = ?, updated_at = ? 
+               WHERE id = ?`,
+              [
+                remote.tratamentoId,
+                remote.tipoId,
+                remote.descricao,
+                remote.data,
+                remote.humor,
+                remote.ansiedade ? 1 : 0,
+                remote.foco,
+                remote.notas,
+                now,
+                remote.id,
+              ],
+            );
+          } else {
+            // 2. Deduplication check by Date and Type (To avoid "Ghost" duplicates from different client IDs)
+            const duplicate = await this.db.executeQuery(
+              "SELECT id FROM side_effects WHERE id_tratamento = ? AND data = ? AND tipo_id = ?",
+              [remote.tratamentoId, remote.data, remote.tipoId],
+            );
+
+            if (duplicate.length > 0) {
+              console.log(
+                `SideEffectRepository: Found duplicate for ${remote.tipoId} at ${remote.data}. Reconciling...`,
+              );
+              // Delete the local one with the wrong ID and adopt the Server result
+              await this.db.executeQuery(
+                "DELETE FROM side_effects WHERE id = ?",
+                [duplicate[0].id],
+              );
+            }
+
+            // Insert new
+            await this.db.executeQuery(
+              `INSERT INTO side_effects (id, id_tratamento, tipo_id, descricao, data, humor, ansiedade, foco, notas, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                remote.id,
+                remote.tratamentoId,
+                remote.tipoId,
+                remote.descricao,
+                remote.data,
+                remote.humor,
+                remote.ansiedade ? 1 : 0,
+                remote.foco,
+                remote.notas,
+                now,
+                now,
+              ],
+            );
+          }
+        }
+        console.log(
+          `SideEffectRepository: Synced ${remoteEffects.length} symptoms.`,
+        );
+      }
+    } catch (e) {
+      console.error("SideEffectRepository: Error syncing symptoms", e);
+    }
+  }
+
+  private async _syncSideEffectToBackend(
+    id: string,
+    tratamentoId: string,
+    sideEffect: SideEffect,
+  ) {
+    // Using camelCase and PascalCase payload to ensure compatibility with backend binding
+    const payload = {
+      Id: id,
+      TratamentoId: tratamentoId,
+      TipoId: sideEffect.typeId,
+      Descricao: sideEffect.description,
+      Data: sideEffect.date,
+      Humor: sideEffect.mood !== undefined && sideEffect.mood !== null ? Number(sideEffect.mood) : null,
+      Ansiedade: !!sideEffect.anxiety,
+      Foco: sideEffect.focus !== undefined && sideEffect.focus !== null ? Number(sideEffect.focus) : null,
+      Notas: sideEffect.notes,
+    };
+
+    console.log("SideEffectRepository: Syncing to backend with payload:", JSON.stringify(payload));
+    await api.post("/api/SideEffects", payload);
   }
 }

@@ -26,9 +26,6 @@ namespace Focus.Api.Controllers
                     tratamentoGuid,
                     request.HorarioPlano,
                     request.HorarioTomado,
-                    request.Humor,
-                    request.Ansiedade,
-                    request.Foco,
                     request.Notas,
                     logGuid
                 );
@@ -56,9 +53,6 @@ namespace Focus.Api.Controllers
                     l.TratamentoId,
                     l.HorarioPlano,
                     l.HorarioTomado,
-                    l.Humor,
-                    l.Ansiedade,
-                    l.Foco,
                     l.Notas
                 });
 
@@ -75,9 +69,6 @@ namespace Focus.Api.Controllers
         string TratamentoId,
         DateTime HorarioPlano,
         DateTime HorarioTomado,
-        int? Humor,
-        bool Ansiedade,
-        int? Foco,
         string? Notas,
         string? Id = null
     );

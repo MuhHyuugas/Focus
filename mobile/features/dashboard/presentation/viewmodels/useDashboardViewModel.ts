@@ -5,6 +5,7 @@ import { Medication } from "@/features/meds/domain/entities/Medication";
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
 import { NotificationRepositoryImpl } from "@/features/notifications/data/NotificationRepositoryImpl";
+import { ReportRepositoryImpl } from "@/features/report/data/repositories/ReportRepositoryImpl";
 import { useAuthContext } from "@/features/auth/presentation/contexts/AuthContext";
 import { GetNextDose } from "@/features/dashboard/domain/usecases/GetNextDose";
 import { GetDashboardStats } from "@/features/dashboard/domain/usecases/GetDashboardStats";
@@ -16,12 +17,14 @@ import { GetNotificationsUseCase } from "@/features/notifications/domain/usecase
 const medRepository = new MedicationRepositoryImpl();
 const sideEffectRepository = new SideEffectRepositoryImpl();
 const notificationRepository = new NotificationRepositoryImpl();
+const reportRepository = new ReportRepositoryImpl();
 
 // Use Cases
 const getNextDoseUseCase = new GetNextDose(medRepository);
 const getDashboardStatsUseCase = new GetDashboardStats(
   medRepository,
   sideEffectRepository,
+  reportRepository,
 );
 const markDoseTakenUseCase = new MarkDoseTaken(medRepository);
 const getMedicationsUseCase = new GetMedications(
@@ -80,6 +83,8 @@ export const useDashboardViewModel = () => {
     // Sincroniza tratamentos do servidor
     await medRepository.syncTreatments();
     await medRepository.syncDoseLogs();
+    await reportRepository.syncData();
+    await sideEffectRepository.syncData();
 
     // Verifica se existem medicações
     const { medications: treatments } = await getMedicationsUseCase.execute();

@@ -52,9 +52,6 @@ CREATE TABLE IF NOT EXISTS `dose_logs` (
   `id_tratamento` char(36) NOT NULL,
   `horario_plano` datetime DEFAULT NULL,
   `horario_tomado` datetime DEFAULT NULL,
-  `humor` int DEFAULT NULL,
-  `ansiedade` tinyint(1) DEFAULT NULL,
-  `foco` int DEFAULT NULL,
   `notas` text,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -72,4 +69,22 @@ CREATE TABLE IF NOT EXISTS `daily_marks` (
   `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_marks` FOREIGN KEY (`id_usuario`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- 6. Side Effects (Symptoms)
+CREATE TABLE IF NOT EXISTS `side_effects` (
+  `id` char(36) NOT NULL,
+  `id_tratamento` char(36) NOT NULL,
+  `tipo_id` varchar(50) NOT NULL,
+  `descricao` varchar(255) NOT NULL,
+  `data` datetime NOT NULL,
+  `humor` int DEFAULT NULL,
+  `ansiedade` tinyint(1) NOT NULL DEFAULT '0',
+  `foco` int DEFAULT NULL,
+  `notas` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `id_tratamento` (`id_tratamento`),
+  CONSTRAINT `side_effects_ibfk_1` FOREIGN KEY (`id_tratamento`) REFERENCES `treatments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

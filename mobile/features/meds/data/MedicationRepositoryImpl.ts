@@ -125,16 +125,13 @@ export class MedicationRepositoryImpl implements MedicationRepository {
 
           if (check.length === 0) {
             await this.db.executeQuery(
-              `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, humor, ansiedade, foco, notas, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, notas, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
               [
                 log.id,
                 log.tratamentoId,
                 log.horarioPlano,
                 log.horarioTomado,
-                log.humor,
-                log.ansiedade ? 1 : 0,
-                log.foco,
                 log.notas,
                 now,
                 now
@@ -144,9 +141,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             // Optional: Update if needed (though logs are usually immutable)
             await this.db.executeQuery(
               `UPDATE dose_logs SET 
-                humor = ?, ansiedade = ?, foco = ?, notas = ?, updated_at = ? 
+                notas = ?, updated_at = ? 
                WHERE id = ?`,
-              [log.humor, log.ansiedade ? 1 : 0, log.foco, log.notas, now, log.id]
+              [log.notas, now, log.id]
             );
           }
         }
@@ -274,9 +271,6 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     tratamentoId: string,
     horarioPlano: string,
     horarioTomado: string,
-    humor?: number,
-    ansiedade?: boolean,
-    foco?: number,
     notas?: string
   ) {
     console.log(`MedicationRepository: Syncing DoseLog ${id} to backend...`);
@@ -285,9 +279,6 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       TratamentoId: tratamentoId,
       HorarioPlano: horarioPlano,
       HorarioTomado: horarioTomado,
-      Humor: humor ?? null,
-      Ansiedade: ansiedade ?? false,
-      Foco: foco ?? null,
       Notas: notas ?? null
     });
   }
@@ -322,10 +313,6 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     date: string,
     actualTakenTime?: string,
     medName?: string,
-    mood?: number,
-    anxiety?: boolean,
-    focus?: number,
-    notes?: string,
   ): Promise<void> {
     try {
       const now = Date.now();
@@ -336,9 +323,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
         : new Date().toISOString();
 
       await this.db.executeQuery(
-        `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, humor, ansiedade, foco, notas, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [logId, medId, scheduledIso, takenIso, mood ?? null, anxiety ? 1 : 0, focus ?? null, notes ?? null, now, now],
+        `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [logId, medId, scheduledIso, takenIso, now, now],
       );
 
       // 4. Push to Backend (Non-blocking)
@@ -347,10 +334,6 @@ export class MedicationRepositoryImpl implements MedicationRepository {
         medId,
         scheduledIso,
         takenIso,
-        mood,
-        anxiety,
-        focus,
-        notes
       ).catch(err => console.error("Background DoseLog sync failed:", err));
     } catch (e) {
       console.error("MedicationRepository: Error marking dose taken", e);

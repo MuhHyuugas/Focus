@@ -6,7 +6,7 @@ export class DatabaseService {
   private static instance: DatabaseService;
   private db: SQLite.SQLiteDatabase | null = null; // Use null initially
 
-  private constructor() {}
+  private constructor() { }
 
   // padrão singleton para garantir que tenhamos apenas uma instância do banco de dados
   public static getInstance(): DatabaseService {
@@ -79,6 +79,21 @@ export class DatabaseService {
         data TEXT NOT NULL,
         created_at INTEGER,
         updated_at INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS side_effects (
+        id TEXT PRIMARY KEY NOT NULL,
+        id_tratamento TEXT NOT NULL,
+        tipo_id TEXT NOT NULL,
+        descricao TEXT NOT NULL,
+        data TEXT NOT NULL,
+        humor INTEGER,
+        ansiedade INTEGER,
+        foco INTEGER,
+        notas TEXT,
+        created_at INTEGER,
+        updated_at INTEGER,
+        FOREIGN KEY (id_tratamento) REFERENCES treatments (id)
       );
     `);
 

@@ -6,6 +6,7 @@
  */
 
 using Focus.Application.UseCases.Usuarios;
+using Focus.Application.UseCases.SideEffects;
 using Focus.Domain.Repositories;
 using Focus.Domain.Security;
 using Focus.Infrastructure.Repositories;
@@ -37,6 +38,7 @@ builder.Services.AddScoped<ITratamentoRepository, TratamentoRepository>();
 builder.Services.AddScoped<IRegistroDiarioRepository, RegistroDiarioRepository>();
 builder.Services.AddScoped<IDailyMarkRepository, DailyMarkRepository>();
 builder.Services.AddScoped<IDoseLogRepository, DoseLogRepository>();
+builder.Services.AddScoped<ISideEffectRepository, SideEffectRepository>();
 
 // --- 4. Segurança e Criptografia ---
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -62,6 +64,10 @@ builder.Services.AddScoped<Focus.Application.UseCases.DailyMarks.ListarDailyMark
 // Dose Logs
 builder.Services.AddScoped<Focus.Application.UseCases.DoseLogs.RegistrarDoseLog>();
 builder.Services.AddScoped<Focus.Application.UseCases.DoseLogs.ListarDoseLogs>();
+
+// Side Effects
+builder.Services.AddScoped<RegistrarSideEffect>();
+builder.Services.AddScoped<ListarSideEffects>();
 
 // Medicações
 builder.Services.AddScoped<Focus.Application.UseCases.Medicacoes.ListarMedicacoes>();

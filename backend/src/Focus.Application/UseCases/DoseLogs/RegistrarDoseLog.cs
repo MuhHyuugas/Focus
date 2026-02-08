@@ -8,9 +8,9 @@ namespace Focus.Application.UseCases.DoseLogs
     {
         private readonly IDoseLogRepository _doseLogRepository = doseLogRepository;
 
-        public void Executar(Guid tratamentoId, DateTime horarioPlano, DateTime horarioTomado, int? humor, bool ansiedade, int? foco, string? notas, Guid? id = null)
+        public void Executar(Guid tratamentoId, DateTime horarioPlano, DateTime horarioTomado, string? notas, Guid? id = null)
         {
-            var log = new DoseLog(tratamentoId, horarioPlano, horarioTomado, humor, ansiedade, foco, notas, id);
+            var log = new DoseLog(tratamentoId, horarioPlano, horarioTomado, notas, id);
             _doseLogRepository.Adicionar(log);
         }
     }
