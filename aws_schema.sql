@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `treatments` (
   `status` varchar(20) DEFAULT 'ativo',
   `data_inicio` datetime DEFAULT NULL,
   `data_fim` datetime DEFAULT NULL,
-  `created_at?` datetime DEFAULT CURRENT_TIMESTAMP,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id_medicamento` (`id_medicamento`),
