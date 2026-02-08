@@ -32,8 +32,11 @@ export class ReportRepositoryImpl implements ReportRepository {
       });
 
       marks.forEach((mark: any) => {
-        if (!markedDates[mark.data]) {
-          markedDates[mark.data] = {
+        // Ensure format is YYYY-MM-DD
+        const dateKey = mark.data.split("T")[0];
+
+        if (!markedDates[dateKey]) {
+          markedDates[dateKey] = {
             selected: true,
             marked: true,
             selectedColor: "#179A9B",
@@ -59,7 +62,7 @@ export class ReportRepositoryImpl implements ReportRepository {
         await this.db.executeQuery("DELETE FROM daily_marks WHERE data = ?", [
           date,
         ]);
-        // Note: Backend doesn't have DELETE for DailyMark yet in my implementation, 
+        // Note: Backend doesn't have DELETE for DailyMark yet in my implementation,
         // we'd need to add it or just ignore deletions for now to keep it simple.
       } else {
         const id = crypto.randomUUID();
