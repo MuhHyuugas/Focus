@@ -68,6 +68,9 @@ export const useDashboardViewModel = () => {
    * Atualiza todos os dados do dashboard (medicações, notificações e estatísticas).
    */
   const refreshDashboardData = useCallback(async () => {
+    // Sincroniza tratamentos do servidor
+    await medRepository.syncTreatments();
+
     // Verifica se existem medicações
     const treatments = await medRepository.getMedications();
     setHasMedications(treatments.length > 0);

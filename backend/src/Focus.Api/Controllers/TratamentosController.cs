@@ -8,37 +8,33 @@ namespace Focus.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class TratamentosController : ControllerBase
-    {
-        private readonly CriarTratamento _criarTratamento;
-
         /// <summary>
-        /// Inicializa uma nova instância de <see cref="TratamentosController"/>.
+        /// Lista todos os tratamentos de um usuário.
         /// </summary>
-        public TratamentosController(CriarTratamento criarTratamento)
-        {
-            _criarTratamento = criarTratamento;
-        }
-
-        /// <summary>
-        /// Cria um novo registro de tratamento para um usuário.
-        /// </summary>
-        /// <param name="request">Dados do tratamento e horários.</param>
-        /// <returns>Mensagem de sucesso ou erro.</returns>
-        [HttpPost]
-        public IActionResult Criar([FromBody] CriarTratamentoRequest request)
+        [HttpGet("{usuarioId}")]
+        public IActionResult Listar(string usuarioId)
         {
             try
             {
-                _criarTratamento.Executar(
-                    request.UsuarioId,
-                    request.NomeMedicamento,
-                    request.Dosagem,
-                    request.Dias,
-                    request.Horarios
-                );
+                if (!Guid.TryParse(usuarioId, out var userGuid))
+                    return BadRequest("ID do usuário inválido");
 
-                return Created(string.Empty, new { Message = "Tratamento criado com sucesso." });
+                var listarTratamentos = HttpContext.RequestServices.GetRequiredService<ListarTratamentos>();
+                var tratamentos = listarTratamentos.Executar(userGuid);
+
+                var response = tratamentos.Select(t => new {
+                    t.Id,
+                    t.MedicacaoId,
+                    NomeMedicamento = t.Medicacao?.Nome,
+                    t.Dose,
+                    t.Dias,
+                    t.Horarios,
+                    t.Status,
+                    t.DataInicio,
+                    t.DataFim
+                });
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -46,7 +42,6 @@ namespace Focus.Api.Controllers
             }
         }
     }
-
 
     public record CriarTratamentoRequest(
         string UsuarioId,

@@ -36,16 +36,8 @@ export interface MedicationRepository {
   >;
   markDateAsTaken(date: string): Promise<void>;
   syncCatalog(): Promise<void>;
+  syncTreatments(): Promise<void>;
   searchCatalog(
     query: string,
   ): Promise<{ id: string; name: string; defaultDosage: string }[]>;
-  getAllTakenDoses(): Promise<
-    {
-      medId: string;
-      time: string;
-      date: string;
-      actualTakenTime?: string;
-      medName?: string;
-    }[]
-  >;
 }

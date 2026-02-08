@@ -48,6 +48,7 @@ builder.Services.AddScoped<LoginUsuario>();
 
 // Tratamentos
 builder.Services.AddScoped<Focus.Application.UseCases.Tratamentos.CriarTratamento>();
+builder.Services.AddScoped<Focus.Application.UseCases.Tratamentos.ListarTratamentos>();
 
 // Diário
 builder.Services.AddScoped<Focus.Application.UseCases.Diario.RegistrarDiario>();
