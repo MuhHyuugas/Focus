@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { useAuthContext } from "../contexts/AuthContext";
 import { AuthRepositoryImpl } from "../../data/AuthRepositoryImpl";
+import { LoginUseCase } from "../../domain/use-cases/LoginUseCase";
 import { RegisterUseCase } from "../../domain/use-cases/RegisterUseCase";
 import { SyncCatalog } from "@/features/meds/domain/usecases/SyncCatalog";
 import { SyncDailyMarks } from "@/features/report/domain/usecases/SyncDailyMarks";
@@ -89,6 +90,7 @@ export const useAuthViewModel = () => {
     },
   });
 
+  const loginUseCase = new LoginUseCase(authRepository);
   const registerUseCase = new RegisterUseCase(authRepository);
   const syncCatalogUseCase = new SyncCatalog(medRepository);
   const syncDailyMarksUseCase = new SyncDailyMarks(reportRepository);
@@ -112,7 +114,7 @@ export const useAuthViewModel = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await authRepository.login(data.id, data.password);
+      await loginUseCase.execute(data.id, data.password);
       await checkAuthState();
 
       // Trigger sync in background
@@ -150,7 +152,7 @@ export const useAuthViewModel = () => {
 
     // Auto-Login after successful registration
     try {
-      await authRepository.login(data.email, data.password);
+      await loginUseCase.execute(data.email, data.password);
       await checkAuthState();
 
       // Trigger sync in background
@@ -167,7 +169,6 @@ export const useAuthViewModel = () => {
       setIsLoading(false);
     }
   };
-
 
   return {
     activeTab,

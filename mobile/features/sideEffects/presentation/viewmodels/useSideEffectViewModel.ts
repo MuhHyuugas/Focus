@@ -5,11 +5,16 @@ import { Medication } from "@/features/meds/domain/entities/Medication";
 import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
 import { SideEffect } from "@/features/sideEffects/domain/entities/SideEffect";
 import { SaveSideEffect } from "@/features/sideEffects/domain/usecases/SaveSideEffect";
+import { GetMedications } from "@/features/meds/domain/usecases/GetMedications";
 import { useEffect, useState } from "react";
 
 const repository = new MedicationRepositoryImpl();
 const sideEffectRepository = new SideEffectRepositoryImpl();
 const saveSideEffectUseCase = new SaveSideEffect(sideEffectRepository);
+const getMedicationsUseCase = new GetMedications(
+  repository,
+  sideEffectRepository,
+);
 
 const formatNotes = (
   userNotes: string,
@@ -64,7 +69,7 @@ export const useSideEffectViewModel = () => {
   const loadMedications = async () => {
     setIsLoading(true);
     try {
-      const meds = await repository.getMedications();
+      const { medications: meds } = await getMedicationsUseCase.execute();
       setMedications(meds);
     } catch (error) {
       console.error("Failed to load medications", error);

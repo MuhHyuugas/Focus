@@ -1,9 +1,10 @@
 import { Notification } from "@/features/notifications/domain/entities/Notification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NotificationRepository } from "../domain/repositories/NotificationRepository";
 
 const CURRENT_USER_KEY = "@focus:currentUser";
 
-export class NotificationRepositoryImpl {
+export class NotificationRepositoryImpl implements NotificationRepository {
   private async _getUserId(): Promise<string> {
     try {
       const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);

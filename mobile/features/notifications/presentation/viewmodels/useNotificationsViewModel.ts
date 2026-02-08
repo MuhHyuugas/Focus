@@ -1,11 +1,28 @@
+import { GetMedications } from "@/features/meds/domain/usecases/GetMedications";
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { NotificationRepositoryImpl } from "@/features/notifications/data/NotificationRepositoryImpl";
+import { SideEffectRepositoryImpl } from "@/features/sideEffects/data/SideEffectRepositoryImpl";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Notification } from "../../domain/entities/Notification";
+import { GetNotificationsUseCase } from "../../domain/usecases/GetNotificationsUseCase";
+import { MarkNotificationReadUseCase } from "../../domain/usecases/MarkNotificationReadUseCase";
 
 const notificationRepository = new NotificationRepositoryImpl();
 const medRepository = new MedicationRepositoryImpl();
+const sideEffectRepository = new SideEffectRepositoryImpl();
+
+const getNotificationsUseCase = new GetNotificationsUseCase(
+  notificationRepository,
+);
+const markNotificationReadUseCase = new MarkNotificationReadUseCase(
+  notificationRepository,
+);
+// We need GetMedications to find med name
+const getMedicationsUseCase = new GetMedications(
+  medRepository,
+  sideEffectRepository,
+);
 
 export interface NotificationItem extends Notification {
   isTaken?: boolean;
@@ -18,13 +35,13 @@ export function useNotificationsViewModel() {
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const notifs = await notificationRepository.getNotifications(); // Busca as notificações
+      const notifs = await getNotificationsUseCase.execute(); // Busca as notificações
 
       // Mark all as read immediately when loading
       const unread = notifs.filter((n) => !n.read);
       if (unread.length > 0) {
         for (const u of unread) {
-          await notificationRepository.markAsRead(u.id);
+          await markNotificationReadUseCase.execute(u.id);
         }
         // Update local object status so UI reflects right away if needed,
         // though typically we just want to clear the global badge.
@@ -75,7 +92,7 @@ export function useNotificationsViewModel() {
     if (!medicationId) return;
 
     try {
-      await notificationRepository.markAsRead(notification.id);
+      await markNotificationReadUseCase.execute(notification.id);
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
       const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now
@@ -84,7 +101,7 @@ export function useNotificationsViewModel() {
         .padStart(2, "0")}`;
 
       // Find med name if possible
-      const allMeds = await medRepository.getMedications();
+      const { medications: allMeds } = await getMedicationsUseCase.execute();
       const med = allMeds.find((m) => m.id === medicationId);
       const medName = med ? med.name : undefined;
 

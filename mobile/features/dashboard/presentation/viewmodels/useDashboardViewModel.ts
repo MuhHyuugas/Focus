@@ -9,6 +9,8 @@ import { useAuthContext } from "@/features/auth/presentation/contexts/AuthContex
 import { GetNextDose } from "@/features/dashboard/domain/usecases/GetNextDose";
 import { GetDashboardStats } from "@/features/dashboard/domain/usecases/GetDashboardStats";
 import { MarkDoseTaken } from "@/features/dashboard/domain/usecases/MarkDoseTaken";
+import { GetMedications } from "@/features/meds/domain/usecases/GetMedications";
+import { GetNotificationsUseCase } from "@/features/notifications/domain/usecases/GetNotificationsUseCase";
 
 // Repositories
 const medRepository = new MedicationRepositoryImpl();
@@ -22,6 +24,13 @@ const getDashboardStatsUseCase = new GetDashboardStats(
   sideEffectRepository,
 );
 const markDoseTakenUseCase = new MarkDoseTaken(medRepository);
+const getMedicationsUseCase = new GetMedications(
+  medRepository,
+  sideEffectRepository,
+);
+const getNotificationsUseCase = new GetNotificationsUseCase(
+  notificationRepository,
+);
 
 /**
  * ViewModel responsável pela lógica do Dashboard.
@@ -46,7 +55,7 @@ export const useDashboardViewModel = () => {
    */
   const checkNotifications = useCallback(async () => {
     try {
-      const notifications = await notificationRepository.getNotifications();
+      const notifications = await getNotificationsUseCase.execute();
       const hasUnread = notifications.some((n: any) => !n.read);
       setHasUnreadNotifications(hasUnread);
     } catch (error) {
@@ -69,7 +78,7 @@ export const useDashboardViewModel = () => {
    */
   const refreshDashboardData = useCallback(async () => {
     // Verifica se existem medicações
-    const treatments = await medRepository.getMedications();
+    const { medications: treatments } = await getMedicationsUseCase.execute();
     setHasMedications(treatments.length > 0);
 
     // Verifica se existem notificações

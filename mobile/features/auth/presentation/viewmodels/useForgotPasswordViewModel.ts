@@ -1,6 +1,11 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { z } from "zod";
+import { AuthRepositoryImpl } from "../../data/AuthRepositoryImpl";
+import { ForgotPasswordUseCase } from "../../domain/use-cases/ForgotPasswordUseCase";
+
+const authRepository = new AuthRepositoryImpl();
+const forgotPasswordUseCase = new ForgotPasswordUseCase(authRepository);
 
 // schema de validação do esqueci minha senha
 export const forgotPasswordSchema = z.object({
@@ -21,9 +26,7 @@ export function useForgotPasswordViewModel() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Solicitando redefinição de senha para:", data.email);
-      // Aqui chamaria um Use Case: await forgotPasswordUseCase.execute(data.email);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await forgotPasswordUseCase.execute(data.email);
       setIsSuccess(true);
     } catch (err: any) {
       setError(err.message || "Erro ao processar solicitação");
