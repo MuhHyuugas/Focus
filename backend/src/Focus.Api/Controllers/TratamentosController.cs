@@ -8,17 +8,10 @@ namespace Focus.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class TratamentosController : ControllerBase
+    public class TratamentosController(CriarTratamento criarTratamento, ListarTratamentos listarTratamentos) : ControllerBase
     {
-        private readonly CriarTratamento _criarTratamento;
-
-        /// <summary>
-        /// Inicializa uma nova instância de <see cref="TratamentosController"/>.
-        /// </summary>
-        public TratamentosController(CriarTratamento criarTratamento)
-        {
-            _criarTratamento = criarTratamento;
-        }
+        private readonly CriarTratamento _criarTratamento = criarTratamento;
+        private readonly ListarTratamentos _listarTratamentos = listarTratamentos;
 
         /// <summary>
         /// Cria um novo registro de tratamento para um usuário.
@@ -45,8 +38,40 @@ namespace Focus.Api.Controllers
                 return BadRequest(new { Error = ex.Message });
             }
         }
-    }
 
+        /// <summary>
+        /// Lista todos os tratamentos de um usuário.
+        /// </summary>
+        [HttpGet("{usuarioId}")]
+        public IActionResult Listar(string usuarioId)
+        {
+            try
+            {
+                if (!Guid.TryParse(usuarioId, out var userGuid))
+                    return BadRequest("ID do usuário inválido");
+
+                var tratamentos = _listarTratamentos.Executar(userGuid);
+
+                var response = tratamentos.Select(t => new {
+                    t.Id,
+                    t.MedicacaoId,
+                    NomeMedicamento = t.Medicacao?.Nome,
+                    t.Dose,
+                    t.Dias,
+                    t.Horarios,
+                    t.Status,
+                    t.DataInicio,
+                    t.DataFim
+                });
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+    }
 
     public record CriarTratamentoRequest(
         string UsuarioId,
@@ -56,4 +81,3 @@ namespace Focus.Api.Controllers
         string Horarios
     );
 }
-
