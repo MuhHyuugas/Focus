@@ -1,67 +1,75 @@
 -- aws_schema.sql
--- This schema defines the tables required by the Focus Mobile App.
--- Hand this file to the Backend Developer.
+-- Last Sync from AWS: 2026-02-08
 
 -- 1. Users (Sync Target)
-CREATE TABLE IF NOT EXISTS users (
-    id CHAR(36) PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    senha_hash VARCHAR(255), -- Helper for backend auth if needed
-    telefone VARCHAR(20),
-    avatar VARCHAR(255),
-    data_nascimento DATE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` char(36) NOT NULL,
+  `nome` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `senha_hash` varchar(255) DEFAULT NULL,
+  `telefone` varchar(20) DEFAULT NULL,
+  `avatar` varchar(255) DEFAULT NULL,
+  `data_nascimento` date DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 2. Medications Catalog (Admin Managed)
-CREATE TABLE IF NOT EXISTS medications (
-    id CHAR(36) PRIMARY KEY, -- UUID
-    nome VARCHAR(255) NOT NULL,
-    dosagem_padrao VARCHAR(50), -- e.g., "10mg"
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- 2. Medications Catalog
+CREATE TABLE IF NOT EXISTS `medications` (
+  `id` char(36) NOT NULL,
+  `nome` varchar(255) NOT NULL,
+  `dosagem_padrao` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 2. Treatments (User's Schedule)
--- Replaces the old 'intervalo_horas' model with a flexible day/time schedule.
-CREATE TABLE IF NOT EXISTS treatments (
-    id CHAR(36) PRIMARY KEY, -- UUID
-    id_usuario CHAR(36) NOT NULL, -- UUID from Users table
-    id_medicamento CHAR(36) NOT NULL,
-    dose VARCHAR(50), -- Custom dose (e.g., "2 pills")
-    dias JSON, -- Stored as JSON: ["seg", "qua", "sex"]
-    horarios JSON, -- Stored as JSON: ["08:00", "20:00"]
-    status VARCHAR(20) DEFAULT 'ativo', -- 'ativo', 'finalizado'
-    data_inicio DATETIME,
-    data_fim DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_medicamento) REFERENCES medications(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
-);
+-- 3. Treatments (User's Schedule)
+CREATE TABLE IF NOT EXISTS `treatments` (
+  `id` char(36) NOT NULL,
+  `id_usuario` char(36) NOT NULL,
+  `id_medicamento` char(36) NOT NULL,
+  `dose` varchar(50) DEFAULT NULL,
+  `dias` json DEFAULT NULL,
+  `horarios` json DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'ativo',
+  `data_inicio` datetime DEFAULT NULL,
+  `data_fim` datetime DEFAULT NULL,
+  `created_at?` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `id_medicamento` (`id_medicamento`),
+  KEY `id_usuario` (`id_usuario`),
+  CONSTRAINT `treatments_ibfk_1` FOREIGN KEY (`id_medicamento`) REFERENCES `medications` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `treatments_ibfk_2` FOREIGN KEY (`id_usuario`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 3. Dose Logs (History)
-CREATE TABLE IF NOT EXISTS dose_logs (
-    id CHAR(36) PRIMARY KEY, -- UUID
-    id_tratamento CHAR(36) NOT NULL,
-    horario_plano DATETIME, -- When they were supposed to take it
-    horario_tomado DATETIME, -- When they actually took it
-    humor INT, -- 1-5
-    ansiedade BOOLEAN,
-    foco INT, -- 1-5
-    notas TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_tratamento) REFERENCES treatments(id) ON DELETE CASCADE
-);
--- 4. Daily Marks (Check-in)
-CREATE TABLE IF NOT EXISTS daily_marks (
-    id CHAR(36) PRIMARY KEY,
-    id_usuario CHAR(36) NOT NULL, -- Added to associate with user
-    data DATE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
-);
+-- 4. Dose Logs (History)
+CREATE TABLE IF NOT EXISTS `dose_logs` (
+  `id` char(36) NOT NULL,
+  `id_tratamento` char(36) NOT NULL,
+  `horario_plano` datetime DEFAULT NULL,
+  `horario_tomado` datetime DEFAULT NULL,
+  `humor` int DEFAULT NULL,
+  `ansiedade` tinyint(1) DEFAULT NULL,
+  `foco` int DEFAULT NULL,
+  `notas` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `id_tratamento` (`id_tratamento`),
+  CONSTRAINT `dose_logs_ibfk_1` FOREIGN KEY (`id_tratamento`) REFERENCES `treatments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- 5. Daily Marks (Check-in)
+CREATE TABLE IF NOT EXISTS `daily_marks` (
+  `id` char(36) COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `data` date NOT NULL,
+  `id_usuario` char(36) COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_marks` FOREIGN KEY (`id_usuario`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

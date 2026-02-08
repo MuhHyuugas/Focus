@@ -82,12 +82,14 @@ export class ReportRepositoryImpl implements ReportRepository {
   private async _syncMarkToBackend(id: string, date: string) {
     try {
       const userId = await this._getUserId();
+      console.log(`[Sync] Sending mark. User: ${userId}, Date: ${date}`);
+
       await api.post("/api/DailyMarks", {
-        Id: id,
-        UsuarioId: userId,
-        Data: date,
+        id,
+        usuarioId: userId,
+        data: date,
       });
-      console.log(`Daily mark synced: ${date}`);
+      console.log(`[Sync] Daily mark synced: ${date}`);
     } catch (e) {
       console.error("Daily mark sync failed (Offline?):", e);
     }

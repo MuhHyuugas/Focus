@@ -18,6 +18,7 @@ namespace Focus.Api.Controllers
         [HttpPost]
         public IActionResult Registrar([FromBody] RegistrarDailyMarkRequest request)
         {
+            Console.WriteLine($"[DailyMarks] POST Registrar called. User: {request.UsuarioId}");
             try
             {
                 if (!Guid.TryParse(request.UsuarioId, out var userGuid))
@@ -30,6 +31,7 @@ namespace Focus.Api.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[DailyMarks] POST Error: {ex}");
                 return BadRequest(new { Error = ex.Message });
             }
         }
@@ -37,6 +39,7 @@ namespace Focus.Api.Controllers
         [HttpGet]
         public IActionResult Listar([FromQuery] string usuarioId)
         {
+            Console.WriteLine($"[DailyMarks] GET Listar called with usuarioId: {usuarioId}");
             try
             {
                 if (!Guid.TryParse(usuarioId, out var userGuid))
@@ -47,6 +50,7 @@ namespace Focus.Api.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[DailyMarks] GET Error: {ex}");
                 return BadRequest(new { Error = ex.Message });
             }
         }
