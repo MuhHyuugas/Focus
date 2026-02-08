@@ -7,8 +7,14 @@ import { z } from "zod";
 import { useAuthContext } from "../contexts/AuthContext";
 import { AuthRepositoryImpl } from "../../data/AuthRepositoryImpl";
 import { RegisterUseCase } from "../../domain/use-cases/RegisterUseCase";
+import { SyncCatalog } from "@/features/meds/domain/usecases/SyncCatalog";
+import { SyncDailyMarks } from "@/features/report/domain/usecases/SyncDailyMarks";
+import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
+import { ReportRepositoryImpl } from "@/features/report/data/repositories/ReportRepositoryImpl";
 
 const authRepository = new AuthRepositoryImpl();
+const medRepository = new MedicationRepositoryImpl();
+const reportRepository = new ReportRepositoryImpl();
 
 // Login Validation Schema
 const loginSchema = z.object({
@@ -84,6 +90,20 @@ export const useAuthViewModel = () => {
   });
 
   const registerUseCase = new RegisterUseCase(authRepository);
+  const syncCatalogUseCase = new SyncCatalog(medRepository);
+  const syncDailyMarksUseCase = new SyncDailyMarks(reportRepository);
+
+  const performFullSync = async () => {
+    try {
+      console.log("Performing full sync after login...");
+      await Promise.allSettled([
+        syncCatalogUseCase.execute(),
+        syncDailyMarksUseCase.execute(),
+      ]);
+    } catch (e) {
+      console.error("Full sync failed:", e);
+    }
+  };
 
   /**
    * Processa a solicitação de login.
@@ -94,6 +114,10 @@ export const useAuthViewModel = () => {
     try {
       await authRepository.login(data.id, data.password);
       await checkAuthState();
+
+      // Trigger sync in background
+      performFullSync();
+
       router.replace("/(tabs)/dashboard");
       resetLoginForm();
     } catch (err: any) {
@@ -128,6 +152,10 @@ export const useAuthViewModel = () => {
     try {
       await authRepository.login(data.email, data.password);
       await checkAuthState();
+
+      // Trigger sync in background
+      performFullSync();
+
       router.replace("/(tabs)/dashboard");
       resetSignUpForm();
     } catch (err: any) {
@@ -156,4 +184,3 @@ export const useAuthViewModel = () => {
     signUpErrors,
   };
 };
-

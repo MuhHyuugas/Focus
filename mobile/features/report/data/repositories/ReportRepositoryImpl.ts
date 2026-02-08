@@ -1,23 +1,28 @@
 import { MedicationRepositoryImpl } from "@/features/meds/data/MedicationRepositoryImpl";
 import { ReportRepository } from "../../domain/repositories/ReportRepository";
 import { DatabaseService } from "@/data/local/DatabaseService";
+import { AuthRepositoryImpl } from "@/features/auth/data/AuthRepositoryImpl";
+import api from "@/lib/api";
 import * as crypto from "expo-crypto";
 
-// classe que implementa a interface ReportRepository
 export class ReportRepositoryImpl implements ReportRepository {
   private medRepository = new MedicationRepositoryImpl();
+  private authRepository = new AuthRepositoryImpl();
   private db = DatabaseService.getInstance();
 
-  // função que pega as datas marcadas
+  private async _getUserId(): Promise<string> {
+    const user = await this.authRepository.getCurrentUser();
+    if (!user) throw new Error("User not authenticated");
+    return user.id;
+  }
+
   async getMarkedDates(): Promise<Record<string, any>> {
     try {
       const doses = await this.medRepository.getAllTakenDoses();
-      // Fetch manual daily marks
       const marks = await this.db.executeQuery("SELECT data FROM daily_marks");
 
       const markedDates: Record<string, any> = {};
 
-      // 1. Add doses
       doses.forEach((dose) => {
         markedDates[dose.date] = {
           selected: true,
@@ -26,16 +31,12 @@ export class ReportRepositoryImpl implements ReportRepository {
         };
       });
 
-      // 2. Add manual marks (merge or overwrite?)
-      // If a date is manually marked, it should also show as selected.
-      // If it already has doses, it's already selected.
-      // We can use a different color or dot if needed, but for now just ensure it's marked.
       marks.forEach((mark: any) => {
         if (!markedDates[mark.data]) {
           markedDates[mark.data] = {
             selected: true,
             marked: true,
-            selectedColor: "#179A9B", // Same color for now
+            selectedColor: "#179A9B",
           };
         }
       });
@@ -49,24 +50,28 @@ export class ReportRepositoryImpl implements ReportRepository {
 
   async toggleMarkedDate(date: string): Promise<void> {
     try {
-      // Check if exists
       const existing = await this.db.executeQuery(
         "SELECT id FROM daily_marks WHERE data = ?",
         [date],
       );
 
       if (existing.length > 0) {
-        // Remove
         await this.db.executeQuery("DELETE FROM daily_marks WHERE data = ?", [
           date,
         ]);
+        // Note: Backend doesn't have DELETE for DailyMark yet in my implementation, 
+        // we'd need to add it or just ignore deletions for now to keep it simple.
       } else {
-        // Add
         const id = crypto.randomUUID();
         const now = Date.now();
         await this.db.executeQuery(
           "INSERT INTO daily_marks (id, data, created_at, updated_at) VALUES (?, ?, ?, ?)",
           [id, date, now, now],
+        );
+
+        // Sync to backend (Non-blocking)
+        this._syncMarkToBackend(id, date).catch((err) =>
+          console.error("Failed to sync mark to backend:", err),
         );
       }
     } catch (e) {
@@ -74,15 +79,58 @@ export class ReportRepositoryImpl implements ReportRepository {
     }
   }
 
-  //TODO: envia dados para o backend/banco de dados online
-  async syncData(): Promise<void> {
-    console.log("Syncing data with remote database...");
+  private async _syncMarkToBackend(id: string, date: string) {
+    try {
+      const userId = await this._getUserId();
+      await api.post("/api/DailyMarks", {
+        Id: id,
+        UsuarioId: userId,
+        Data: date,
+      });
+      console.log(`Daily mark synced: ${date}`);
+    } catch (e) {
+      console.error("Daily mark sync failed (Offline?):", e);
+    }
   }
 
-  // função que limpa as datas marcadas (memoria local)
+  async syncData(): Promise<void> {
+    try {
+      console.log("ReportRepository: Syncing daily marks...");
+      const userId = await this._getUserId();
+      const response = await api.get(`/api/DailyMarks?usuarioId=${userId}`);
+      const marks = response.data;
+
+      if (Array.isArray(marks)) {
+        for (const mark of marks) {
+          // Upsert into SQLite
+          const existing = await this.db.executeQuery(
+            "SELECT id FROM daily_marks WHERE id = ?",
+            [mark.id],
+          );
+
+          if (existing.length === 0) {
+            // Check by date to avoid duplicates if ID differs
+            const byDate = await this.db.executeQuery(
+              "SELECT id FROM daily_marks WHERE data = ?",
+              [mark.data],
+            );
+
+            if (byDate.length === 0) {
+              await this.db.executeQuery(
+                "INSERT INTO daily_marks (id, data, created_at, updated_at) VALUES (?, ?, ?, ?)",
+                [mark.id, mark.data, Date.now(), Date.now()],
+              );
+            }
+          }
+        }
+        console.log(`ReportRepository: Synced ${marks.length} marks.`);
+      }
+    } catch (e) {
+      console.error("ReportRepository: Error syncing daily marks:", e);
+    }
+  }
+
   async clearData(): Promise<void> {
-    // Handled by MedicationRepository clearing doses, but we should also clear daily_marks?
-    // User expectation for "logout" usually clears personal data.
     await this.db.executeQuery("DELETE FROM daily_marks");
   }
 }

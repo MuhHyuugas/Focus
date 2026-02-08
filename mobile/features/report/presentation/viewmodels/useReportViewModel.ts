@@ -8,6 +8,7 @@ import { GetMonthlyReport } from "../../domain/usecases/GetMonthlyReport";
 import { HistoryItem } from "../../domain/entities/HistoryItem";
 
 import { ToggleMarkedDate } from "../../domain/usecases/ToggleMarkedDate";
+import { SyncDailyMarks } from "../../domain/usecases/SyncDailyMarks";
 
 const repository = new ReportRepositoryImpl();
 const medRepository = new MedicationRepositoryImpl();
@@ -15,6 +16,7 @@ const medRepository = new MedicationRepositoryImpl();
 const getMarkedDatesUseCase = new GetMarkedDates(repository);
 const getMonthlyReportUseCase = new GetMonthlyReport(medRepository);
 const toggleMarkedDateUseCase = new ToggleMarkedDate(repository);
+const syncDailyMarksUseCase = new SyncDailyMarks(repository);
 
 // funcao que define o viewmodel do relatorio
 export function useReportViewModel() {
@@ -37,6 +39,9 @@ export function useReportViewModel() {
 
   // funcao que carrega as datas marcadas
   const loadMarkedDates = useCallback(async () => {
+    // Background sync before loading locals to ensure fresh data
+    syncDailyMarksUseCase.execute().catch(console.error);
+
     const dates = await getMarkedDatesUseCase.execute();
     setMarkedDates(dates);
   }, []);

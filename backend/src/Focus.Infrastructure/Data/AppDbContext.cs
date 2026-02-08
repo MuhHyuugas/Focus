@@ -13,6 +13,7 @@ namespace Focus.Infrastructure.Data
         public DbSet<Medicacao> Medicacoes { get; set; }
         public DbSet<Tratamento> Tratamentos { get; set; }
         public DbSet<RegistroDiario> Diarios { get; set; }
+        public DbSet<DailyMark> DailyMarks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,7 +83,23 @@ namespace Focus.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.UsuarioId);
             });
+
+            modelBuilder.Entity<DailyMark>(entity =>
+            {
+                entity.ToTable("daily_marks");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UsuarioId).HasColumnName("id_usuario").IsRequired();
+                entity.Property(e => e.Data).HasColumnName("data").IsRequired();
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(e => e.Usuario)
+                    .WithMany()
+                    .HasForeignKey(e => e.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }
-

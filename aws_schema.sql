@@ -56,3 +56,12 @@ CREATE TABLE IF NOT EXISTS dose_logs (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (id_tratamento) REFERENCES treatments(id) ON DELETE CASCADE
 );
+-- 4. Daily Marks (Check-in)
+CREATE TABLE IF NOT EXISTS daily_marks (
+    id CHAR(36) PRIMARY KEY,
+    id_usuario CHAR(36) NOT NULL, -- Added to associate with user
+    data DATE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES users(id) ON DELETE CASCADE
+);
