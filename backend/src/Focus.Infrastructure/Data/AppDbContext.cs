@@ -14,10 +14,33 @@ namespace Focus.Infrastructure.Data
         public DbSet<Tratamento> Tratamentos { get; set; }
         public DbSet<RegistroDiario> Diarios { get; set; }
         public DbSet<DailyMark> DailyMarks { get; set; }
+        public DbSet<DoseLog> DoseLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<DoseLog>(entity =>
+            {
+                entity.ToTable("dose_logs");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.TratamentoId).HasColumnName("id_tratamento").IsRequired();
+                entity.Property(e => e.HorarioPlano).HasColumnName("horario_plano").IsRequired();
+                entity.Property(e => e.HorarioTomado).HasColumnName("horario_tomado").IsRequired();
+                entity.Property(e => e.Humor).HasColumnName("humor");
+                entity.Property(e => e.Ansiedade).HasColumnName("ansiedade").IsRequired();
+                entity.Property(e => e.Foco).HasColumnName("foco");
+                entity.Property(e => e.Notas).HasColumnName("notas");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(e => e.Tratamento)
+                    .WithMany()
+                    .HasForeignKey(e => e.TratamentoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<UsuarioTDAH>(entity =>
             {

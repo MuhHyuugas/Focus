@@ -79,6 +79,7 @@ export const useDashboardViewModel = () => {
   const refreshDashboardData = useCallback(async () => {
     // Sincroniza tratamentos do servidor
     await medRepository.syncTreatments();
+    await medRepository.syncDoseLogs();
 
     // Verifica se existem medicações
     const { medications: treatments } = await getMedicationsUseCase.execute();

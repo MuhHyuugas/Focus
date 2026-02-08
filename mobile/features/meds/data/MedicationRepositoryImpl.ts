@@ -66,7 +66,8 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             );
           }
 
-          // 2. Upsert Treatment
+          // 2. Upsert Treatment with Deduplication Reconcilliation
+          // Check by ID first (Standard)
           const treatCheck = await this.db.executeQuery(
             "SELECT id FROM treatments WHERE id = ?",
             [t.id],
@@ -80,6 +81,18 @@ export class MedicationRepositoryImpl implements MedicationRepository {
               [userId, t.medicacaoId, t.dose, t.dias, t.horarios, now, t.id],
             );
           } else {
+            // Check if we have a "Ghost" duplicate (Same Med, Different ID)
+            const ghostCheck = await this.db.executeQuery(
+              "SELECT id FROM treatments WHERE id_usuario = ? AND id_medicamento = ?",
+              [userId, t.medicacaoId],
+            );
+
+            if (ghostCheck.length > 0) {
+              console.log(`MedicationRepository: Found ghost duplicate for ${t.nomeMedicamento}. Reconciling...`);
+              // Delete the local one with the wrong ID and adopt the Server result
+              await this.db.executeQuery("DELETE FROM treatments WHERE id = ?", [ghostCheck[0].id]);
+            }
+
             await this.db.executeQuery(
               `INSERT INTO treatments (id, id_usuario, id_medicamento, dose, dias, horarios, created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -91,6 +104,56 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       }
     } catch (e) {
       console.error("MedicationRepository: Error syncing treatments", e);
+    }
+  }
+
+  async syncDoseLogs(): Promise<void> {
+    try {
+      const userId = await this._getUserId();
+      console.log(`MedicationRepository: Syncing DoseLogs for user ${userId}...`);
+      const response = await api.get(`/api/DoseLogs/usuario/${userId}`);
+      const logs = response.data;
+
+      if (Array.isArray(logs)) {
+        for (const log of logs) {
+          const now = Date.now();
+          // Upsert into local dose_logs
+          const check = await this.db.executeQuery(
+            "SELECT id FROM dose_logs WHERE id = ?",
+            [log.id]
+          );
+
+          if (check.length === 0) {
+            await this.db.executeQuery(
+              `INSERT INTO dose_logs (id, id_tratamento, horario_plano, horario_tomado, humor, ansiedade, foco, notas, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                log.id,
+                log.tratamentoId,
+                log.horarioPlano,
+                log.horarioTomado,
+                log.humor,
+                log.ansiedade ? 1 : 0,
+                log.foco,
+                log.notas,
+                now,
+                now
+              ]
+            );
+          } else {
+            // Optional: Update if needed (though logs are usually immutable)
+            await this.db.executeQuery(
+              `UPDATE dose_logs SET 
+                humor = ?, ansiedade = ?, foco = ?, notas = ?, updated_at = ? 
+               WHERE id = ?`,
+              [log.humor, log.ansiedade ? 1 : 0, log.foco, log.notas, now, log.id]
+            );
+          }
+        }
+        console.log(`MedicationRepository: Synced ${logs.length} dose logs.`);
+      }
+    } catch (e) {
+      console.error("MedicationRepository: Error syncing dose logs", e);
     }
   }
 
@@ -202,6 +265,30 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       Dosagem: med.dosage,
       Dias: JSON.stringify(med.days),
       Horarios: JSON.stringify(med.times),
+      Id: treatmentId, // Send local ID to backend
+    });
+  }
+
+  private async _syncDoseLogToBackend(
+    id: string,
+    tratamentoId: string,
+    horarioPlano: string,
+    horarioTomado: string,
+    humor?: number,
+    ansiedade?: boolean,
+    foco?: number,
+    notas?: string
+  ) {
+    console.log(`MedicationRepository: Syncing DoseLog ${id} to backend...`);
+    await api.post("/api/DoseLogs", {
+      Id: id,
+      TratamentoId: tratamentoId,
+      HorarioPlano: horarioPlano,
+      HorarioTomado: horarioTomado,
+      Humor: humor ?? null,
+      Ansiedade: ansiedade ?? false,
+      Foco: foco ?? null,
+      Notas: notas ?? null
     });
   }
 
@@ -253,6 +340,18 @@ export class MedicationRepositoryImpl implements MedicationRepository {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [logId, medId, scheduledIso, takenIso, mood ?? null, anxiety ? 1 : 0, focus ?? null, notes ?? null, now, now],
       );
+
+      // 4. Push to Backend (Non-blocking)
+      this._syncDoseLogToBackend(
+        logId,
+        medId,
+        scheduledIso,
+        takenIso,
+        mood,
+        anxiety,
+        focus,
+        notes
+      ).catch(err => console.error("Background DoseLog sync failed:", err));
     } catch (e) {
       console.error("MedicationRepository: Error marking dose taken", e);
     }

@@ -36,6 +36,7 @@ builder.Services.AddScoped<IMedicacaoRepository, MedicacaoRepository>();
 builder.Services.AddScoped<ITratamentoRepository, TratamentoRepository>();
 builder.Services.AddScoped<IRegistroDiarioRepository, RegistroDiarioRepository>();
 builder.Services.AddScoped<IDailyMarkRepository, DailyMarkRepository>();
+builder.Services.AddScoped<IDoseLogRepository, DoseLogRepository>();
 
 // --- 4. Segurança e Criptografia ---
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -57,6 +58,10 @@ builder.Services.AddScoped<Focus.Application.UseCases.Diario.ObterHistoricoDiari
 // Daily Marks
 builder.Services.AddScoped<Focus.Application.UseCases.DailyMarks.RegistrarDailyMark>();
 builder.Services.AddScoped<Focus.Application.UseCases.DailyMarks.ListarDailyMarks>();
+
+// Dose Logs
+builder.Services.AddScoped<Focus.Application.UseCases.DoseLogs.RegistrarDoseLog>();
+builder.Services.AddScoped<Focus.Application.UseCases.DoseLogs.ListarDoseLogs>();
 
 // Medicações
 builder.Services.AddScoped<Focus.Application.UseCases.Medicacoes.ListarMedicacoes>();

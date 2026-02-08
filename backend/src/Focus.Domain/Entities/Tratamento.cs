@@ -26,9 +26,9 @@ namespace Focus.Domain.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public Tratamento(Guid usuarioId, Guid medicacaoId, string? dose, string? dias, string? horarios)
+        public Tratamento(Guid usuarioId, Guid medicacaoId, string? dose, string? dias, string? horarios, Guid? id = null)
         {
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             UsuarioId = usuarioId;
             MedicacaoId = medicacaoId;
             Dose = dose;

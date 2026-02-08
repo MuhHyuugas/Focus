@@ -23,15 +23,19 @@ namespace Focus.Api.Controllers
         {
             try
             {
-                _criarTratamento.Executar(
+                var tratamento = _criarTratamento.Executar(
                     request.UsuarioId,
                     request.NomeMedicamento,
                     request.Dosagem,
                     request.Dias,
-                    request.Horarios
+                    request.Horarios,
+                    request.Id
                 );
 
-                return Created(string.Empty, new { Message = "Tratamento criado com sucesso." });
+                return Created(string.Empty, new { 
+                    Message = "Tratamento criado com sucesso.",
+                    Id = tratamento.Id
+                });
             }
             catch (Exception ex)
             {
@@ -78,6 +82,7 @@ namespace Focus.Api.Controllers
         string NomeMedicamento,
         string Dosagem,
         string Dias,
-        string Horarios
+        string Horarios,
+        string? Id = null
     );
 }
