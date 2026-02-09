@@ -14,12 +14,20 @@ namespace Focus.Infrastructure.Repositories
         public void Adicionar(Tratamento tratamento)
         {
             _context.Tratamentos.Add(tratamento);
-            // Os lembretes adicionados ao tratamento serão salvos em cascata, 
-            // mas como não configuramos cascata explicita de adição na entidade (apenas navegação),
-            // se adicionarmos Lembretes na lista (se existisse) funcionaria. 
-            // Como vamos salvar lembretes separadamente ou via tratamento, vamos garantir que o SaveChanges persista tudo.
-
             _context.SaveChanges();
+        }
+
+        public void Atualizar(Tratamento tratamento)
+        {
+            _context.Tratamentos.Update(tratamento);
+            _context.SaveChanges();
+        }
+
+        public Tratamento? ObterPorId(Guid id)
+        {
+            return _context.Tratamentos
+                .Include(t => t.Medicacao)
+                .FirstOrDefault(t => t.Id == id);
         }
 
         public List<Tratamento> BuscarPorUsuario(Guid usuarioId)

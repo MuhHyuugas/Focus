@@ -1,17 +1,12 @@
+import { PillBottle } from "lucide-react-native";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Text } from "@/components/ui/text";
 import { useSideEffectViewModel } from "@/features/sideEffects/presentation/viewmodels/useSideEffectViewModel";
 import { Stack } from "expo-router";
 import React from "react";
-import { Image, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { images } from "@/assets/assets";
 import EffectItem from "./components/effectItem";
@@ -19,7 +14,7 @@ import EffectItem from "./components/effectItem";
 const SideEffectView = () => {
   const {
     medications,
-    setSelectedMedicationId,
+    selectedMedicationId,
     sideEffectTypes,
     selectedEffectTypeId,
     setSelectedEffectTypeId,
@@ -34,6 +29,10 @@ const SideEffectView = () => {
     saveSideEffect,
   } = useSideEffectViewModel();
 
+  const selectedMedication = medications.find(
+    (m) => m.id === selectedMedicationId,
+  );
+
   return (
     <>
       <Stack.Screen
@@ -45,30 +44,28 @@ const SideEffectView = () => {
       />
       <ScrollView>
         <View className="p-2">
-          <View className="m-2 mt-8 bg-neutral-100 p-2 rounded-xl">
-            <Text className="text-2xl font-bold">
-              Selecione o medicamento que causou o efeito colateral:
-            </Text>
-
-            <View className="flex flex-row items-center justify-between gap-4">
-              <Select
-                className="flex-1"
-                onValueChange={(option) =>
-                  setSelectedMedicationId(option?.value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o medicamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {medications.map((med) => (
-                    <SelectItem key={med.id} label={med.name} value={med.id} />
-                  ))}
-                </SelectContent>
-              </Select>
-              <Image source={images.medshield} className="w-24 h-24 m-4" />
+          {/* Active Medication Card */}
+          <View className="m-2 mt-4 bg-[#179A9B] rounded-3xl p-6 shadow-sm flex-row items-center gap-4">
+            <View className="bg-white/20 p-3 rounded-full">
+              <PillBottle size={32} color="white" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white text-sm font-medium opacity-80 uppercase tracking-wider mb-1">
+                Medicamento:
+              </Text>
+              <Text className="text-2xl font-bold text-white mb-1">
+                {selectedMedication?.name || "Nenhum medicamento"}
+              </Text>
+              {selectedMedication?.dosage && (
+                <View className="self-start bg-white/20 px-3 py-1 rounded-full mt-1">
+                  <Text className="text-white font-medium text-xs">
+                    {selectedMedication.dosage}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
+
           <View className="m-2 mt-4 bg-neutral-100 rounded-xl p-4">
             <Text className="text-2xl font-bold mb-4">
               Qual o efeito colateral?

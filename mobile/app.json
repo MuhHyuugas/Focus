@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.focus",
+      "bundleIdentifier": "com.esii.focus",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
@@ -24,7 +24,7 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"],
-      "package": "com.anonymous.focus"
+      "package": "com.esii.focus"
     },
     "web": {
       "bundler": "metro",
@@ -32,6 +32,14 @@
       "favicon": "./assets/images/logo.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -50,8 +58,8 @@
       [
         "expo-notifications",
         {
-         // "icon": "./assets/images/notification-icon.png",
-         // "color": "#ffffff",
+          // "icon": "./assets/images/notification-icon.png",
+          // "color": "#ffffff",
           "permissions": {
             "allowExactAlarm": true
           }

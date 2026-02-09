@@ -1,25 +1,30 @@
-import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { HistoryItem } from "@/features/report/domain/entities/HistoryItem";
-import { AlarmClock, Calendar1 } from "lucide-react-native";
 import { ScrollView, View } from "react-native";
 import TreatmentDetail from "./treatmentDetail";
 
 interface TreatmentControlProps {
   items: HistoryItem[];
+  medicationName?: string;
 }
 
-export default function TreatmentControl({ items }: TreatmentControlProps) {
+export default function TreatmentControl({
+  items,
+  medicationName,
+}: TreatmentControlProps) {
   return (
     <>
-      <View className=" p-2 flex flex-row items-center justify-between gap-2 flex-shrink-0">
-        <Text className="text-2xl text-[#13203F] font-bold">
-          Controle de tratamento
-        </Text>
-        <View className="flex flex-row gap-4">
-          <Icon as={Calendar1} color="#13203F" size={36} />
-          <Icon as={AlarmClock} size={36} />
+      <View className="p-2 flex flex-col gap-2 flex-shrink-0">
+        <View className="flex flex-row items-center justify-between">
+          <Text className="text-2xl text-[#13203F] font-bold">
+            Controle de tratamento
+          </Text>
         </View>
+        {medicationName ? (
+          <Text className="text-sm font-semibold text-[#179A9B] uppercase tracking-wider">
+            {medicationName}
+          </Text>
+        ) : null}
       </View>
 
       <ScrollView>
@@ -32,7 +37,6 @@ export default function TreatmentControl({ items }: TreatmentControlProps) {
             items.map((item) => (
               <TreatmentDetail
                 key={item.id}
-                medicationName={item.medicationName}
                 date={item.date}
                 time={item.time}
                 meridiem={item.meridiem}

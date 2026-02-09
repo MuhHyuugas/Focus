@@ -71,6 +71,9 @@ export const useSideEffectViewModel = () => {
     try {
       const { medications: meds } = await getMedicationsUseCase.execute();
       setMedications(meds);
+      if (meds.length > 0) {
+        setSelectedMedicationId(meds[0].id);
+      }
     } catch (error) {
       console.error("Failed to load medications", error);
     } finally {
@@ -105,7 +108,9 @@ export const useSideEffectViewModel = () => {
     }
 
     try {
-      const effectType = SIDE_EFFECT_TYPES.find((t) => t.id === selectedEffectTypeId);
+      const effectType = SIDE_EFFECT_TYPES.find(
+        (t) => t.id === selectedEffectTypeId,
+      );
       if (!effectType) return;
 
       const newSideEffect: SideEffect = {
@@ -120,14 +125,16 @@ export const useSideEffectViewModel = () => {
         focus: focusMap[selectedEffectTypeId],
       };
 
-      console.log("Saving Side Effect:", JSON.stringify(newSideEffect, null, 2));
+      console.log(
+        "Saving Side Effect:",
+        JSON.stringify(newSideEffect, null, 2),
+      );
 
       await saveSideEffectUseCase.execute(newSideEffect);
 
       alert("Efeito salvo com sucesso!");
 
       // Limpar formulário
-      setSelectedMedicationId(undefined);
       setSelectedEffectTypeId(undefined);
       setNotesMap({});
       setMoodMap({});

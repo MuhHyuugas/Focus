@@ -46,10 +46,20 @@ export function useReportViewModel() {
     setMarkedDates(dates);
   }, []);
 
+  const [activeMedicationName, setActiveMedicationName] = useState("");
+
   const loadHistory = useCallback(async () => {
     const [year, month] = currentDate.split("-");
     const items = await getMonthlyReportUseCase.execute(year, month);
     setHistoryItems(items);
+
+    // Fetch active medication for header
+    const meds = await medRepository.getMedications();
+    if (meds.length > 0) {
+      setActiveMedicationName(meds[0].name);
+    } else {
+      setActiveMedicationName("");
+    }
   }, [currentDate]);
 
   useFocusEffect(
@@ -127,5 +137,6 @@ export function useReportViewModel() {
     markedDates,
     screenOptions,
     historyItems,
+    activeMedicationName,
   };
 }

@@ -87,7 +87,7 @@ export default function DashboardView() {
                 <View className="flex flex-row items-center justify-between z-10">
                   <Text className="p-2 text-xl font-semibold text-primary-foreground flex-1">
                     {nextMedication
-                      ? `Próxima medicação: ${nextMedication.name}`
+                      ? `Próxima dose: ${nextMedication.name}`
                       : "Todas as doses de hoje tomadas!\nNos vemos amanhã!"}
                   </Text>
 

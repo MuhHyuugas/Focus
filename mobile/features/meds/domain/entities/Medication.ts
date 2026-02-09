@@ -4,6 +4,7 @@ export interface Medication {
   name: string;
   days: string[];
   times: string[];
+  status?: string;
   dosage?: string;
   image?: any;
 }

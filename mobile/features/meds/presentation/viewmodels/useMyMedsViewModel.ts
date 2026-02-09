@@ -65,7 +65,7 @@ export const useMyMedsViewModel = () => {
 
     // carrega os medicamentos
     const result = await getMedicationsUseCase.execute();
-    setMedications(result.medications);
+    setMedications(result.medications.slice(0, 1));
     setSideEffectsMap(result.sideEffectsMap);
   }, []);
 
@@ -97,11 +97,19 @@ export const useMyMedsViewModel = () => {
     setTimes(times.filter((t) => t !== time));
   };
 
+  const resetForm = () => {
+    setMedicationName("");
+    setDosage("");
+    setSelectedDays([]);
+    setTimes(["08:00"]);
+    setEditingMedicationId(null);
+  };
+
   // salva o medicamento
-  const saveMedication = async () => {
+  const saveMedication = async (): Promise<boolean> => {
     if (!medicationName || selectedDays.length === 0 || times.length === 0) {
       alert("Preencha todo os campos!");
-      return;
+      return false;
     }
 
     // cria o medicamento
@@ -117,14 +125,12 @@ export const useMyMedsViewModel = () => {
       await saveMedicationUseCase.execute(newMedication);
       await loadMedications();
 
-      setMedicationName("");
-      setDosage("");
-      setSelectedDays([]);
-      setTimes(["08:00"]);
-      setEditingMedicationId(null);
+      resetForm();
+      return true;
     } catch (error) {
       console.error("Error saving medication:", error);
       alert("Erro ao salvar medicamento");
+      return false;
     }
   };
 
@@ -185,5 +191,6 @@ export const useMyMedsViewModel = () => {
     editingMedicationId,
     sideEffectsMap,
     clearHistory,
+    resetForm,
   };
 };

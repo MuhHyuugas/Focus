@@ -23,10 +23,12 @@ export class GetMonthlyReport {
       // Find medication to get the name if not present in dose
       const med = medications.find((m) => m.id === dose.medId);
 
-      const [hourStr] = dose.time.split(":");
+      const [hourStr, minuteStr] = dose.time.split(":");
       const hour = parseInt(hourStr);
       const isPm = hour >= 12;
       const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      const displayMinute = minuteStr;
+
       const [, m, day] = dose.date.split("-");
 
       const nameToDisplay = dose.medName || (med ? med.name : "Desconhecido");
@@ -35,7 +37,7 @@ export class GetMonthlyReport {
         id: `${dose.date}-${dose.time}-${index}`,
         medicationName: nameToDisplay,
         date: `${day}.${m}`,
-        time: displayHour.toString(),
+        time: `${displayHour}:${displayMinute}`,
         meridiem: isPm ? 2 : 1,
       };
     });

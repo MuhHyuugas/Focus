@@ -10,8 +10,11 @@ export class GetNextDose {
     date: Date;
     timeUntil: string;
   } | null> {
-    const treatments = await this.repository.getMedications();
-    if (treatments.length === 0) return null;
+    const allTreatments = await this.repository.getMedications();
+    if (allTreatments.length === 0) return null;
+
+    // Enforce single active medication rule: Only consider the first one.
+    const treatments = [allTreatments[0]];
 
     const now = new Date();
     const todayISO = now.toISOString().split("T")[0];

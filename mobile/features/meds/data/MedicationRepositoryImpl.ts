@@ -45,7 +45,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   async syncTreatments(): Promise<void> {
     try {
       const userId = await this._getUserId();
-      console.log(`MedicationRepository: Syncing treatments for user ${userId}...`);
+      console.log(
+        `MedicationRepository: Syncing treatments for user ${userId}...`,
+      );
       const response = await api.get(`/api/tratamentos/${userId}`);
       const treatments = response.data;
 
@@ -78,7 +80,16 @@ export class MedicationRepositoryImpl implements MedicationRepository {
               `UPDATE treatments SET 
                 id_usuario = ?, id_medicamento = ?, dose = ?, dias = ?, horarios = ?, status = ?, updated_at = ? 
                WHERE id = ?`,
-              [userId, t.medicacaoId, t.dose, t.dias, t.horarios, t.status || 'ativo', now, t.id],
+              [
+                userId,
+                t.medicacaoId,
+                t.dose,
+                t.dias,
+                t.horarios,
+                t.status || "ativo",
+                now,
+                t.id,
+              ],
             );
           } else {
             // Check if we have a "Ghost" duplicate (Same Med, Different ID)
@@ -88,19 +99,36 @@ export class MedicationRepositoryImpl implements MedicationRepository {
             );
 
             if (ghostCheck.length > 0) {
-              console.log(`MedicationRepository: Found ghost duplicate for ${t.nomeMedicamento}. Reconciling...`);
+              console.log(
+                `MedicationRepository: Found ghost duplicate for ${t.nomeMedicamento}. Reconciling...`,
+              );
               // Delete the local one with the wrong ID and adopt the Server result
-              await this.db.executeQuery("DELETE FROM treatments WHERE id = ?", [ghostCheck[0].id]);
+              await this.db.executeQuery(
+                "DELETE FROM treatments WHERE id = ?",
+                [ghostCheck[0].id],
+              );
             }
 
             await this.db.executeQuery(
               `INSERT INTO treatments (id, id_usuario, id_medicamento, dose, dias, horarios, status, created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [t.id, userId, t.medicacaoId, t.dose, t.dias, t.horarios, t.status || 'ativo', now, now],
+              [
+                t.id,
+                userId,
+                t.medicacaoId,
+                t.dose,
+                t.dias,
+                t.horarios,
+                t.status || "ativo",
+                now,
+                now,
+              ],
             );
           }
         }
-        console.log(`MedicationRepository: Synced ${treatments.length} treatments.`);
+        console.log(
+          `MedicationRepository: Synced ${treatments.length} treatments.`,
+        );
       }
     } catch (e) {
       console.error("MedicationRepository: Error syncing treatments", e);
@@ -110,7 +138,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   async syncDoseLogs(): Promise<void> {
     try {
       const userId = await this._getUserId();
-      console.log(`MedicationRepository: Syncing DoseLogs for user ${userId}...`);
+      console.log(
+        `MedicationRepository: Syncing DoseLogs for user ${userId}...`,
+      );
       const response = await api.get(`/api/DoseLogs/usuario/${userId}`);
       const logs = response.data;
 
@@ -120,7 +150,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
           // Upsert into local dose_logs
           const check = await this.db.executeQuery(
             "SELECT id FROM dose_logs WHERE id = ?",
-            [log.id]
+            [log.id],
           );
 
           if (check.length === 0) {
@@ -134,8 +164,8 @@ export class MedicationRepositoryImpl implements MedicationRepository {
                 log.horarioTomado,
                 log.notas,
                 now,
-                now
-              ]
+                now,
+              ],
             );
           } else {
             // Optional: Update if needed (though logs are usually immutable)
@@ -143,7 +173,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
               `UPDATE dose_logs SET 
                 notas = ?, updated_at = ? 
                WHERE id = ?`,
-              [log.notas, now, log.id]
+              [log.notas, now, log.id],
             );
           }
         }
@@ -189,11 +219,41 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       const userId = await this._getUserId();
       const now = Date.now();
 
-      // Desativar tratamentos ativos anteriores localmente
+      // 1. Get currently active treatments to sync deactivation to backend
+      const activeTreatments = await this.db.executeQuery(
+        "SELECT id, id_medicamento as medId, dose, dias, horarios FROM treatments WHERE id_usuario = ? AND status = 'ativo'",
+        [userId],
+      );
+
+      // 2. Deactivate them locally
       await this.db.executeQuery(
         "UPDATE treatments SET status = 'inativo', updated_at = ? WHERE id_usuario = ? AND status = 'ativo'",
         [now, userId],
       );
+
+      // 3. Sync deactivation to backend
+      for (const t of activeTreatments) {
+        // Need to fetch med name first if not in treatment table (it is joined usually)
+        // But for sync we need the structure.
+        // Let's get the medication details to be safe
+        const medDetails = await this.db.executeQuery(
+          "SELECT nome FROM medications WHERE id = ?",
+          [t.medId],
+        );
+        const medName =
+          medDetails.length > 0 ? medDetails[0].nome : "Desconhecido";
+
+        await this._syncTreatmentToBackend(userId, t.medId, t.id, {
+          id: t.medId,
+          name: medName,
+          dosage: t.dose,
+          days: JSON.parse(t.dias),
+          times: JSON.parse(t.horarios),
+          status: "inativo", // Force inactive status
+        }).catch((e) =>
+          console.error(`Failed to sync deactivation for ${t.id}`, e),
+        );
+      }
 
       let medId = "";
       if (medication.id) {
@@ -234,22 +294,41 @@ export class MedicationRepositoryImpl implements MedicationRepository {
         treatmentId = existingTreatment[0].id;
         await this.db.executeQuery(
           `UPDATE treatments SET 
-            id_medicamento = ?, dias = ?, horarios = ?, dose = ?, updated_at = ? 
+            id_medicamento = ?, dias = ?, horarios = ?, dose = ?, status = 'ativo', updated_at = ? 
            WHERE id = ?`,
-          [medId, daysJson, timesJson, medication.dosage || null, now, treatmentId],
+          [
+            medId,
+            daysJson,
+            timesJson,
+            medication.dosage || null,
+            now,
+            treatmentId,
+          ],
         );
       } else {
         treatmentId = treatmentId || Crypto.randomUUID();
         await this.db.executeQuery(
-          `INSERT INTO treatments (id, id_usuario, id_medicamento, dias, horarios, dose, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [treatmentId, userId, medId, daysJson, timesJson, medication.dosage || null, now, now],
+          `INSERT INTO treatments (id, id_usuario, id_medicamento, dias, horarios, dose, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'ativo', ?, ?)`,
+          [
+            treatmentId,
+            userId,
+            medId,
+            daysJson,
+            timesJson,
+            medication.dosage || null,
+            now,
+            now,
+          ],
         );
       }
 
-      this._syncTreatmentToBackend(userId, medId, treatmentId, medication).catch((err) =>
-        console.error("Background sync failed:", err),
-      );
+      this._syncTreatmentToBackend(
+        userId,
+        medId,
+        treatmentId,
+        medication,
+      ).catch((err) => console.error("Background sync failed:", err));
     } catch (e) {
       console.error("MedicationRepository: Error saving medication", e);
       throw new Error("Failed to save medication");
@@ -268,6 +347,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       Dosagem: med.dosage,
       Dias: JSON.stringify(med.days),
       Horarios: JSON.stringify(med.times),
+      Status: med.status || "ativo",
       Id: treatmentId, // Send local ID to backend
     });
   }
@@ -277,7 +357,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     tratamentoId: string,
     horarioPlano: string,
     horarioTomado: string,
-    notas?: string
+    notas?: string,
   ) {
     console.log(`MedicationRepository: Syncing DoseLog ${id} to backend...`);
     await api.post("/api/DoseLogs", {
@@ -285,7 +365,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       TratamentoId: tratamentoId,
       HorarioPlano: horarioPlano,
       HorarioTomado: horarioTomado,
-      Notas: notas ?? null
+      Notas: notas ?? null,
     });
   }
 
@@ -298,6 +378,19 @@ export class MedicationRepositoryImpl implements MedicationRepository {
 
   async deleteMedication(id: string): Promise<void> {
     try {
+      // 1. Delete Side Effects
+      await this.db.executeQuery(
+        "DELETE FROM side_effects WHERE id_tratamento = ?",
+        [id],
+      );
+
+      // 2. Delete Dose Logs
+      await this.db.executeQuery(
+        "DELETE FROM dose_logs WHERE id_tratamento = ?",
+        [id],
+      );
+
+      // 3. Delete Treatment
       await this.db.executeQuery("DELETE FROM treatments WHERE id = ?", [id]);
     } catch (e) {
       console.error("MedicationRepository: Error deleting medication", e);
@@ -307,7 +400,34 @@ export class MedicationRepositoryImpl implements MedicationRepository {
   async clearAll(): Promise<void> {
     try {
       const userId = await this._getUserId();
-      await this.db.executeQuery("DELETE FROM treatments WHERE id_usuario = ?", [userId]);
+      // 1. Get user treatments to delete dependent logs
+      const treatments = await this.db.executeQuery(
+        "SELECT id FROM treatments WHERE id_usuario = ?",
+        [userId],
+      );
+
+      if (treatments.length > 0) {
+        const ids = treatments.map((t: any) => t.id);
+        const placeholders = ids.map(() => "?").join(",");
+
+        // 2. Delete Side Effects
+        await this.db.executeQuery(
+          `DELETE FROM side_effects WHERE id_tratamento IN (${placeholders})`,
+          ids,
+        );
+
+        // 3. Delete Dose Logs
+        await this.db.executeQuery(
+          `DELETE FROM dose_logs WHERE id_tratamento IN (${placeholders})`,
+          ids,
+        );
+
+        // 4. Delete Treatments
+        await this.db.executeQuery(
+          `DELETE FROM treatments WHERE id IN (${placeholders})`,
+          ids,
+        );
+      }
     } catch (e) {
       console.error("MedicationRepository: Error clearing medications", e);
     }
@@ -335,12 +455,9 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       );
 
       // 4. Push to Backend (Non-blocking)
-      this._syncDoseLogToBackend(
-        logId,
-        medId,
-        scheduledIso,
-        takenIso,
-      ).catch(err => console.error("Background DoseLog sync failed:", err));
+      this._syncDoseLogToBackend(logId, medId, scheduledIso, takenIso).catch(
+        (err) => console.error("Background DoseLog sync failed:", err),
+      );
     } catch (e) {
       console.error("MedicationRepository: Error marking dose taken", e);
     }
@@ -390,7 +507,7 @@ export class MedicationRepositoryImpl implements MedicationRepository {
     }
   }
 
-  async markDateAsTaken(date: string): Promise<void> { }
+  async markDateAsTaken(date: string): Promise<void> {}
 
   async searchCatalog(query: string): Promise<any[]> {
     try {
@@ -398,11 +515,19 @@ export class MedicationRepositoryImpl implements MedicationRepository {
       const allMeds = response.data;
       return allMeds
         .filter((m: any) => m.nome.toLowerCase().includes(query.toLowerCase()))
-        .map((m: any) => ({ id: m.id, name: m.nome, defaultDosage: m.dosagemPadrao }));
+        .map((m: any) => ({
+          id: m.id,
+          name: m.nome,
+          defaultDosage: m.dosagemPadrao,
+        }));
     } catch (e) {
       const sql = `SELECT id, nome as name, dosagem_padrao as defaultDosage FROM medications WHERE nome LIKE ? LIMIT 20`;
       const rows = await this.db.executeQuery(sql, [`%${query}%`]);
-      return rows.map((r: any) => ({ id: r.id, name: r.name, defaultDosage: r.defaultDosage }));
+      return rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        defaultDosage: r.defaultDosage,
+      }));
     }
   }
 }

@@ -1,4 +1,3 @@
-
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
@@ -22,6 +21,7 @@ export default function ReportView() {
     setCurrentDate,
     currentYear,
     historyItems,
+    activeMedicationName,
   } = useReportViewModel();
 
   return (
@@ -49,7 +49,10 @@ export default function ReportView() {
 
                 <View className="pt-4">
                   <Separator />
-                  <TreatmentControl items={historyItems} />
+                  <TreatmentControl
+                    items={historyItems}
+                    medicationName={activeMedicationName}
+                  />
                 </View>
               </View>
             </TabsContent>

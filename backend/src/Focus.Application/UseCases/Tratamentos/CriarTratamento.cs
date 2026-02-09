@@ -22,25 +22,42 @@ namespace Focus.Application.UseCases.Tratamentos
                 _medicacaoRepository.Adicionar(medicacao);
             }
 
-            // 2. Cria Tratamento
+            // 2. Verifica se é atualização ou criação
+            if (!string.IsNullOrEmpty(id) && Guid.TryParse(id, out var treatmentGuid))
+            {
+                var tratamentoExistente = _tratamentoRepository.ObterPorId(treatmentGuid);
+                if (tratamentoExistente != null)
+                {
+                    // Atualiza
+                    tratamentoExistente.MedicacaoId = medicacao.Id;
+                    tratamentoExistente.Dose = dose;
+                    tratamentoExistente.Dias = dias;
+                    tratamentoExistente.Horarios = horarios;
+                    tratamentoExistente.UpdatedAt = DateTime.UtcNow;
+                    
+                    _tratamentoRepository.Atualizar(tratamentoExistente);
+                    return tratamentoExistente;
+                }
+            }
+
             if (!Guid.TryParse(usuarioId, out var usuarioGuid))
             {
                 throw new ArgumentException("ID do usuário inválido");
             }
 
-            // Desativar tratamentos ativos anteriores para garantir que apenas 1 esteja ativo
+            // Apenas para CRIAR novo tratamento, desativamos os anteriores? 
+            // O requisito diz que o app quer ter "um medicamento ativo". 
+            // Se estamos criando um novo, faz sentido desativar os outros.
             _tratamentoRepository.DesativarTratamentosAtivos(usuarioGuid);
 
-            Guid? treatmentId = null;
-            if (!string.IsNullOrEmpty(id) && Guid.TryParse(id, out var guidParsed))
-            {
-                treatmentId = guidParsed;
-            }
+            var novoTratamento = new Tratamento(usuarioGuid, medicacao.Id, dose, dias, horarios);
+            // Se o ID vier e não existir, ignoramos e criamos novo UUID (padrão do construtor) ou forçamos? 
+            // O construtor suporta ID opcional. Se o cliente mandou ID e não achou, talvez fosse melhor criar com aquele ID?
+            // Mas UUID gerado pelo cliente pode ser perigoso se colidir. Vamos deixar gerar novo.
+            
+            _tratamentoRepository.Adicionar(novoTratamento);
 
-            var tratamento = new Tratamento(usuarioGuid, medicacao.Id, dose, dias, horarios, treatmentId);
-            _tratamentoRepository.Adicionar(tratamento);
-
-            return tratamento;
+            return novoTratamento;
         }
     }
 }
